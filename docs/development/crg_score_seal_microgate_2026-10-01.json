@@ -1,0 +1,31 @@
+{
+  "bundle_manifest_sha256": "a3210501a9f34ef74d924c1d73dd80d61955b8162488170a8bd1655c11cfba3e",
+  "graph_oracles": 12,
+  "numeric_control": {
+    "batch_size": 2,
+    "bins": 8,
+    "complete_and_partial_restore": true,
+    "exact_scores_and_models": true,
+    "workers": 2
+  },
+  "pairs": 16427,
+  "runs": [
+    {
+      "exit_code": 0,
+      "memory_limitations": "Summed process RssAnon may count shared anonymous pages repeatedly; one-second samples can miss short peaks",
+      "schema": "binette-cli-profile-v1",
+      "summed_process_tree_rssanon_peak_bytes": 4707078144,
+      "variant": "baseline",
+      "wall_seconds": 56.03119531273842
+    },
+    {
+      "exit_code": 0,
+      "memory_limitations": "Summed process RssAnon may count shared anonymous pages repeatedly; one-second samples can miss short peaks",
+      "schema": "binette-cli-profile-v1",
+      "summed_process_tree_rssanon_peak_bytes": 5032620032,
+      "variant": "modified",
+      "wall_seconds": 50.04405122343451
+    }
+  ],
+  "verdict": "PASS"
+}

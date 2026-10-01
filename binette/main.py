@@ -238,6 +238,7 @@ def manage_protein_alignement(
     use_existing_protein_file: bool,
     resume_diamond: bool,
     low_mem: bool,
+    summarize: bool = False,
 ) -> tuple[dict[str, int], dict[str, list[str]], dict[str, int | None] | None]:
     """
     Predicts or reuses proteins prediction and runs diamond on them.
@@ -258,7 +259,7 @@ def manage_protein_alignement(
     # Predict or reuse proteins prediction and run diamond on them
     if use_existing_protein_file:
         logger.info(f"Parsing protein sequences from '{faa_file}'")
-        contig_to_genes = cds.parse_faa_file(faa_file.as_posix())
+        contig_to_genes = cds.parse_faa_file(faa_file.as_posix(), summarize=summarize)
         io.check_contig_consistency(
             contigs_in_bins,
             contig_to_genes,
@@ -278,7 +279,7 @@ def manage_protein_alignement(
             if name in contigs_in_bins
         )
         contig_to_genes, contig_to_coding_len = cds.predict(
-            contigs_iterator, faa_file.as_posix(), threads
+            contigs_iterator, faa_file.as_posix(), threads, summarize=summarize
         )
         logger.info("Coding density will be computed from freshly identified genes")
 
@@ -569,11 +570,30 @@ def binette(
             rich_help_panel="Output and Runtime Control",
         ),
     ] = True,
+    quality_workers: Annotated[
+        int | None,
+        typer.Option(
+            "--quality-workers",
+            help="Persistent CheckM2 model owners; default at most four, bounded by --threads.",
+            rich_help_panel="Advanced Options",
+        ),
+    ] = None,
+    score_cache: Annotated[
+        Path | None,
+        typer.Option(
+            "--score-cache",
+            help="Durable score-shard directory; defaults to OUTDIR/.score_shards.",
+            rich_help_panel="Advanced Options",
+        ),
+    ] = None,
 ) -> int:
     """Orchestrate the execution of the program"""
 
     # Set up logging based on verbosity flags
     setup_logging(verbose=verbose, quiet=quiet)
+    if quality_workers is not None and not 1 <= quality_workers <= threads:
+        raise typer.BadParameter("--quality-workers must be between one and --threads")
+    score_cache = score_cache if score_cache is not None else outdir / ".score_shards"
 
     # Validate that exactly one of bin_dirs or contig2bin_tables is provided
     if bin_dirs is None and contig2bin_tables is None:
@@ -647,6 +667,7 @@ def binette(
             use_existing_protein_file=use_existing_protein_file,
             resume_diamond=resume,
             low_mem=low_mem,
+            summarize=True,
         )
     )
 
@@ -663,21 +684,41 @@ def binette(
     # Extract cds metadata ##
     logger.info("Computing CDS metadata")
     contig_metadat = cds.get_contig_cds_metadata(contig_to_genes, threads)
+    del contig_to_genes, contig_name_to_genes, contig_name_to_kegg_counter
 
     contig_metadat["contig_to_kegg_counter"] = contig_to_kegg_counter
     contig_metadat["contig_to_length"] = contig_to_length
+    from binette.features import ContigEvidence
+
+    contig_metadat["_evidence"] = ContigEvidence.from_dicts(
+        contig_metadat["contig_to_kegg_counter"],
+        contig_metadat["contig_to_cds_count"],
+        contig_metadat["contig_to_aa_counter"],
+        contig_metadat["contig_to_aa_length"],
+    )
+    # Only the typed evidence is consumed by scoring; release Python Counters.
+    for key in (
+        "contig_to_kegg_counter",
+        "contig_to_cds_count",
+        "contig_to_aa_counter",
+        "contig_to_aa_length",
+    ):
+        del contig_metadat[key]
+    del contig_to_kegg_counter
 
     logger.info("Adding size and assessing quality of input bins")
+    contig_lengths = bin_quality.prepare_contig_sizes(contig_to_length)
     original_bins = bin_quality.add_bin_metrics(
         list(contig_key_to_original_bin.values()),
         contig_metadat,
         contamination_weight,
         threads,
         disable_progress_bar=not progress or quiet,
+        quality_workers=quality_workers,
     )
     contig_key_to_original_bin = {b.contigs_key: b for b in original_bins}
 
-    bin_quality.add_bin_size_and_N50(original_bins, contig_to_length)
+    bin_quality.add_bin_size_and_N50(original_bins, contig_lengths)
 
     if contig_to_coding_length:
         bin_quality.add_bin_coding_density(original_bins, contig_to_coding_length)
@@ -688,8 +729,6 @@ def binette(
     io.write_original_bin_metrics(original_bins, original_bin_report_dir)
 
     logger.info("Creating intermediate bins")
-
-    contig_lengths = bin_quality.prepare_contig_sizes(contig_to_length)
 
     contig_key_to_new_bin = bin_manager.create_intermediate_bins(
         contig_key_to_original_bin,
@@ -709,12 +748,21 @@ def binette(
         contamination_weight=contamination_weight,
         threads=threads,
         disable_progress_bar=not progress or quiet,
+        quality_workers=quality_workers,
+        score_cache=score_cache,
     )
-    contig_key_to_new_bin = {b.contigs_key: b for b in new_bins}
-
-    contig_key_to_all_bin = contig_key_to_original_bin | contig_key_to_new_bin
-
-    bin_quality.add_bin_size_and_N50(contig_key_to_all_bin.values(), contig_to_length)
+    # Scoring mutates parent objects; its list no longer needs to retain them.
+    del new_bins, contig_metadat
+    if not debug:
+        # N50 participates in ranking only after quality eligibility. Originals
+        # already have metrics and their complete reports have been written.
+        for key in list(contig_key_to_new_bin):
+            candidate = contig_key_to_new_bin[key]
+            if not candidate.is_high_quality(min_completeness, max_contamination):
+                del contig_key_to_new_bin[key]
+    bin_quality.add_bin_size_and_N50(contig_key_to_new_bin.values(), contig_lengths)
+    contig_key_to_new_bin.update(contig_key_to_original_bin)
+    contig_key_to_all_bin = contig_key_to_new_bin
 
     if debug:
         all_bin_compo_file = outdir / "all_bins_quality_reports.tsv"

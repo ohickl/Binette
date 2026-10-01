@@ -120,43 +120,30 @@ def get_contig_to_kegg_id(diamond_result_file: str) -> dict:
     :param diamond_result_file: Path to the Diamond result file.
     :return: A dictionary mapping contig IDs to KEGG annotations.
     """
-    diamond_results_df = pd.read_csv(
-        diamond_result_file, sep="\t", usecols=[0, 1], names=["ProteinID", "annotation"]
+    calculator = keggData.KeggCalculator()
+    allowed = calculator.return_default_values_from_category("KO_Genes")
+    contig_to_kegg_counter = {}
+    seen = False
+    frames = pd.read_csv(
+        diamond_result_file,
+        sep="\t",
+        usecols=[0, 1],
+        names=["ProteinID", "annotation"],
+        chunksize=100_000,
     )
-
-    if diamond_results_df.empty:
-        logger.error(
-            f"DIAMOND result file '{diamond_result_file}' is empty. "
-            "This can happen with low-quality assemblies where DIAMOND produces no hits."
-        )
+    for frame in frames:
+        if frame.empty:
+            continue
+        seen = True
+        annotations = frame["annotation"].str.partition("~")[2]
+        valid = annotations.isin(allowed)
+        for protein, ko in zip(
+            frame.loc[valid, "ProteinID"], annotations[valid], strict=True
+        ):
+            contig = protein.rpartition("_")[0]
+            counter = contig_to_kegg_counter.setdefault(contig, Counter())
+            counter[ko] += 1
+    if not seen:
+        logger.error("DIAMOND result file '%s' is empty", diamond_result_file)
         sys.exit(3)
-
-    diamond_results_df[["Ref100_hit", "Kegg_annotation"]] = diamond_results_df[
-        "annotation"
-    ].str.split("~", n=1, expand=True)
-
-    KeggCalc = keggData.KeggCalculator()
-    defaultKOs = KeggCalc.return_default_values_from_category("KO_Genes")
-
-    diamond_results_df = diamond_results_df.loc[
-        diamond_results_df["Kegg_annotation"].isin(defaultKOs.keys())
-    ]
-    diamond_results_df["contig"] = (
-        diamond_results_df["ProteinID"].str.split("_", n=-1).str[:-1].str.join("_")
-    )
-
-    contig_to_kegg_counter = (
-        diamond_results_df.groupby("contig")
-        .agg({"Kegg_annotation": Counter})
-        .reset_index()
-    )
-
-    contig_to_kegg_counter = dict(
-        zip(
-            contig_to_kegg_counter["contig"],
-            contig_to_kegg_counter["Kegg_annotation"],
-            strict=False,
-        )
-    )
-
     return contig_to_kegg_counter

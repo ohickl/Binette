@@ -1,5 +1,4 @@
 from collections import Counter
-from unittest.mock import patch
 
 from pyroaring import BitMap
 
@@ -296,210 +295,96 @@ def test_balanced_chunks_distribution_properties():
     assert sum(chunk_sizes_example) == 100  # All items included
 
 
-def test_add_bin_metrics_with_multiple_threads():
-    """
-    Test add_bin_metrics with multi-threading enabled.
+def test_add_bin_metrics_with_multiple_threads(monkeypatch):
+    """Parent candidates retain identity; tasks/results are bounded numeric payloads."""
+    import concurrent.futures as cf
 
-    This test verifies that:
-    1. The function correctly triggers parallel processing path with multiple threads
-    2. The _assess_bins_quality_batch function is called for processing bins
-    3. All bins are processed and returned with quality metrics
-    4. joblib.Parallel is called with the correct number of jobs
+    import numpy as np
 
-    Note: This test mocks joblib.Parallel to avoid actual multiprocessing complexity
-    and focuses on testing the parallel processing logic and chunking behavior.
-    """
-    # Create mock bins - need enough bins to trigger parallel processing
-    # min_bins_per_chunk = checkm2_batch_size * 6 = 500 * 6 = 3000
-    # Need > 3000 * 2 = 6000 bins to trigger parallel processing with threads > 1
-    num_bins = 7000
-    bins = [Bin(BitMap((i,))) for i in range(num_bins)]
+    from binette import scoring
 
-    # Mock contig_info with minimal required data
-    contig_info = {
-        "contig_to_kegg_counter": {i: Counter({"K01810": 1}) for i in range(num_bins)},
-        "contig_to_cds_count": {i: 10 for i in range(num_bins)},
-        "contig_to_aa_counter": {
-            i: Counter({"A": 5, "D": 10}) for i in range(num_bins)
-        },
-        "contig_to_aa_length": {i: 1000 for i in range(num_bins)},
+    bins = [Bin(BitMap((i,))) for i in range(25)]
+    observed = []
+
+    class Pool:
+        def __init__(self, **kwargs):
+            assert kwargs["max_workers"] == 2
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def submit(self, function, task):
+            start, keys = task
+            assert len(keys) <= 2
+            assert all(isinstance(key, bytes) for key in keys)
+            observed.append(task)
+            future = cf.Future()
+            future.set_result(
+                (
+                    start,
+                    (
+                        np.full(len(keys), 90.0),
+                        np.full(len(keys), 5.0),
+                        np.ones(len(keys), dtype=np.uint8),
+                    ),
+                )
+            )
+            return future
+
+    info = {
+        "contig_to_kegg_counter": {},
+        "contig_to_cds_count": {},
+        "contig_to_aa_counter": {},
+        "contig_to_aa_length": {},
     }
-
-    contamination_weight = 0.5
-    threads = 4
-    checkm2_batch_size = 500
-
-    # Mock _assess_bins_quality_batch to add quality metrics without CheckM2
-    def mock_assess_bins_quality_batch(
-        bins_batch,
-        contig_to_kegg_counter,
-        contig_to_cds_count,
-        contig_to_aa_counter,
-        contig_to_aa_length,
-        contamination_weight,
-        postProcessor,
-        threads_arg,
-        modelProc=None,
-    ):
-        """Mock implementation that adds dummy quality metrics to bins."""
-        for bin_obj in bins_batch:
-            bin_obj.add_quality(
-                completeness=90.0,
-                contamination=5.0,
-                contamination_weight=contamination_weight,
-            )
-            bin_obj.add_model("Neural Network (Specific Model)")
-        return bins_batch
-
-    # Mock joblib.Parallel to execute tasks sequentially without spawning processes
-    class MockParallel:
-        def __init__(self, n_jobs=1, **kwargs):
-            self.n_jobs = n_jobs
-            self.call_count = 0
-
-        def __call__(self, tasks):
-            self.call_count += 1
-            # Execute tasks sequentially (simulating parallel execution)
-            results = []
-            for task in tasks:
-                result = task[0](*task[1], **task[2])  # Execute the delayed function
-                results.append(result)
-            return results
-
-    with patch(
-        "binette.bin_quality._assess_bins_quality_batch",
-        side_effect=mock_assess_bins_quality_batch,
-    ):
-        with patch("binette.bin_quality.joblib.Parallel", MockParallel):
-            with (
-                patch("binette.bin_quality.get_modelPostprocessing"),
-                patch("binette.bin_quality.get_modelProcessing"),
-            ):
-                # Call add_bin_metrics with multiple threads
-                result_bins = bin_quality.add_bin_metrics(
-                    bins=bins,
-                    contig_info=contig_info,
-                    contamination_weight=contamination_weight,
-                    threads=threads,
-                    checkm2_batch_size=checkm2_batch_size,
-                    disable_progress_bar=True,
-                )
-
-                # Verify all bins were processed
-                assert len(result_bins) == num_bins, (
-                    f"Expected {num_bins} bins, got {len(result_bins)}"
-                )
-
-                # Verify that each bin has quality metrics
-                for bin_obj in result_bins:
-                    assert hasattr(bin_obj, "completeness"), (
-                        "Bin should have completeness metric"
-                    )
-                    assert hasattr(bin_obj, "contamination"), (
-                        "Bin should have contamination metric"
-                    )
-                    assert bin_obj.completeness == 90.0, "Completeness should be 90.0"
-                    assert bin_obj.contamination == 5.0, "Contamination should be 5.0"
+    monkeypatch.setattr(cf, "ProcessPoolExecutor", Pool)
+    monkeypatch.setattr(scoring, "save_reference", lambda root: None)
+    result = bin_quality.add_bin_metrics(
+        bins, info, 0.5, threads=2, checkm2_batch_size=2, disable_progress_bar=True
+    )
+    assert result is bins
+    assert len(observed) == 13
+    assert all(result[i] is bins[i] and result[i].score == 87.5 for i in range(25))
 
 
-def test_add_bin_metrics_sequential_path():
-    """
-    Test add_bin_metrics with single thread (sequential processing).
+def test_add_bin_metrics_sequential_path(monkeypatch):
+    import numpy as np
 
-    This test verifies that:
-    1. With threads=1, the sequential processing path is used
-    2. Bins are processed correctly without parallelization
-    3. Quality metrics are correctly added to bins
+    from binette import scoring
 
-    Note: This test mocks _assess_bins_quality_batch to avoid CheckM2 imports.
-    """
-    # Create a small number of bins
-    num_bins = 10
-    bins = [Bin(BitMap((i,))) for i in range(num_bins)]
-
-    # Mock contig_info
-    contig_info = {
-        "contig_to_kegg_counter": {i: Counter({"K01810": 1}) for i in range(num_bins)},
-        "contig_to_cds_count": {i: 10 for i in range(num_bins)},
-        "contig_to_aa_counter": {
-            i: Counter({"A": 5, "D": 10}) for i in range(num_bins)
-        },
-        "contig_to_aa_length": {i: 1000 for i in range(num_bins)},
+    bins = [Bin(BitMap((i,))) for i in range(10)]
+    monkeypatch.setattr(scoring, "make_processors", lambda threads: (None, None))
+    monkeypatch.setattr(
+        scoring,
+        "predict_batch",
+        lambda evidence, memberships, *args: (
+            np.full(len(memberships), 85.0),
+            np.full(len(memberships), 3.0),
+            np.zeros(len(memberships), dtype=np.uint8),
+        ),
+    )
+    info = {
+        "contig_to_kegg_counter": {},
+        "contig_to_cds_count": {},
+        "contig_to_aa_counter": {},
+        "contig_to_aa_length": {},
     }
-
-    contamination_weight = 0.5
-
-    # Mock _assess_bins_quality_batch to add quality metrics without CheckM2
-    def mock_assess_bins_quality_batch(
-        bins_batch,
-        contig_to_kegg_counter,
-        contig_to_cds_count,
-        contig_to_aa_counter,
-        contig_to_aa_length,
-        contamination_weight,
-        postProcessor,
-        threads_arg,
-        modelProc=None,
-    ):
-        """Mock implementation that adds dummy quality metrics to bins."""
-        for bin_obj in bins_batch:
-            bin_obj.add_quality(
-                completeness=85.0,
-                contamination=3.0,
-                contamination_weight=contamination_weight,
-            )
-            bin_obj.add_model("Gradient Boost (General Model)")
-        return bins_batch
-
-    # Mock at module level
-    with patch(
-        "binette.bin_quality._assess_bins_quality_batch",
-        side_effect=mock_assess_bins_quality_batch,
-    ) as mock_assess:
-        with (
-            patch("binette.bin_quality.get_modelPostprocessing"),
-            patch("binette.bin_quality.get_modelProcessing"),
-        ):
-            # Call add_bin_metrics with single thread
-            result_bins = bin_quality.add_bin_metrics(
-                bins=bins,
-                contig_info=contig_info,
-                contamination_weight=contamination_weight,
-                threads=1,  # Single thread
-                checkm2_batch_size=500,
-                disable_progress_bar=True,
-            )
-
-            # For sequential processing, should call _assess_bins_quality_batch at least once
-            assert mock_assess.call_count >= 1, (
-                f"Should call _assess_bins_quality_batch at least once, got {mock_assess.call_count}"
-            )
-
-            # Verify all bins were processed
-            assert len(result_bins) == num_bins, (
-                f"Expected {num_bins} bins, got {len(result_bins)}"
-            )
-
-            # Verify that each bin has quality metrics
-            for bin_obj in result_bins:
-                assert hasattr(bin_obj, "completeness"), (
-                    "Bin should have completeness metric"
-                )
-                assert hasattr(bin_obj, "contamination"), (
-                    "Bin should have contamination metric"
-                )
-                assert bin_obj.completeness == 85.0, "Completeness should be 85.0"
-                assert bin_obj.contamination == 3.0, "Contamination should be 3.0"
+    result = bin_quality.add_bin_metrics(
+        bins, info, 0.5, threads=1, disable_progress_bar=True
+    )
+    assert result is bins
+    assert all(
+        candidate.score == 83.5
+        and candidate.checkm2_model == "Gradient Boost (General Model)"
+        for candidate in bins
+    )
 
 
 def test_add_bin_metrics_empty_bins():
-    result_bins = bin_quality.add_bin_metrics(
-        bins=[],
-        contig_info=[],
-        contamination_weight=2,
-        threads=1,  # Single thread
-        checkm2_batch_size=500,
-        disable_progress_bar=True,
+    assert (
+        bin_quality.add_bin_metrics([], [], 2, threads=1, disable_progress_bar=True)
+        == []
     )
-
-    assert result_bins == [], "Result should be an empty list when input bins are empty"

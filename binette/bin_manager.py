@@ -2,7 +2,6 @@ import itertools
 import logging
 from collections import Counter, defaultdict
 from collections.abc import Iterable
-from functools import cached_property
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +15,22 @@ logger = logging.getLogger(__name__)
 
 
 class Bin:
+    __slots__ = (
+        "origin",
+        "name",
+        "is_original",
+        "contigs",
+        "length",
+        "N50",
+        "completeness",
+        "contamination",
+        "score",
+        "coding_density",
+        "original_name",
+        "_checkm2_model_index",
+        "_contigs_key",
+    )
+    EMPTY_ORIGIN = frozenset()
     CHECKM2_MODELS = (
         "Neural Network (Specific Model)",
         "Gradient Boost (General Model)",
@@ -40,7 +55,7 @@ class Bin:
             raise TypeError("Contigs should be a BitMap object.")
 
         if origin is None:
-            self.origin = set()
+            self.origin = self.EMPTY_ORIGIN
         else:
             self.origin = {origin}
 
@@ -59,13 +74,27 @@ class Bin:
         self.coding_density = None
         self.original_name = None
         self._checkm2_model_index = None
+        self._contigs_key = None
 
-    @cached_property
+    @property
     def contigs_key(self):
         """
         Serialize the contigs for easier comparison.
         """
-        return self.contigs.serialize()
+        if self._contigs_key is None:
+            self._contigs_key = self.contigs.serialize()
+        return self._contigs_key
+
+    def __getstate__(self):
+        return {name: getattr(self, name) for name in self.__slots__}
+
+    def __setstate__(self, state):
+        # Read prior experimental stage objects without retaining __dict__.
+        state = dict(state)
+        state.setdefault("_contigs_key", state.pop("contigs_key", None))
+        state.pop("checkm2_model", None)
+        for name in self.__slots__:
+            setattr(self, name, state[name])
 
     def __eq__(self, other: "Bin") -> bool:
         """
@@ -147,7 +176,7 @@ class Bin:
                 f"Valid models are: {', '.join(self.CHECKM2_MODELS)}"
             ) from exc
 
-    @cached_property
+    @property
     def checkm2_model(self):
         """
         Get the CheckM2 model for the bin.
@@ -404,9 +433,18 @@ def from_bins_to_bin_graph(bins: Iterable[Bin]) -> nx.Graph:
     """
     G = nx.Graph()
 
-    for bin1, bin2 in itertools.combinations(bins, 2):
-        if bin1.overlaps_with(bin2):
-            G.add_edge(bin1.contigs_key, bin2.contigs_key)
+    # Reuse contig membership rather than testing every unrelated bin pair.
+    keys = []
+    contig_to_bins = defaultdict(list)
+    for index, bin_obj in enumerate(bins):
+        keys.append(bin_obj.contigs_key)
+        for contig in bin_obj.contigs:
+            contig_to_bins[contig].append(index)
+    edges = set()
+    for indices in contig_to_bins.values():
+        edges.update(itertools.combinations(indices, 2))
+    for left, right in sorted(edges):
+        G.add_edge(keys[left], keys[right])
     return G
 
 
@@ -504,49 +542,31 @@ def select_best_bins(
         f"Filtering bins: only bins with completeness >= {min_completeness} "
         f"and contamination <= {max_contamination}"
     )
-    good_enough_bins = {
-        k: b
-        for k, b in bins_dict.items()
-        if b.completeness >= min_completeness and b.contamination <= max_contamination
-    }
-
-    logger.info("Sorting bins")
-    sorted_bin_keys = sorted(
-        good_enough_bins,
-        key=lambda k: (
-            -good_enough_bins[k].score,
-            -good_enough_bins[k].N50,
-            -good_enough_bins[k].is_original,
-            k,  # contigs_key itself is sortable (bytes)
+    eligible = (
+        key
+        for key, candidate in bins_dict.items()
+        if candidate.completeness >= min_completeness
+        and candidate.contamination <= max_contamination
+    )
+    ordered = sorted(
+        eligible,
+        key=lambda key: (
+            -bins_dict[key].score,
+            -bins_dict[key].N50,
+            -bins_dict[key].is_original,
+            key,
         ),
     )
-
-    logger.info("Building contig index")
-    contig_to_bin_keys = build_contig_index(good_enough_bins)
-
-    logger.info("Selecting bins")
+    # Greedy rejection depends only on overlap with already selected bins.
+    # One occupied bitmap replaces the inverted-index references and discarded
+    # keys without changing the exact ranked traversal.
+    occupied = BitMap()
     selected_bins = []
-    discarded_keys = set()
-
-    for bin_key in sorted_bin_keys:
-        if bin_key in discarded_keys:
-            continue
-
-        bin_obj = good_enough_bins[bin_key]
-        selected_bins.append(bin_obj)
-
-        # Gather overlapping bins via inverted index
-        overlapping_bin_keys = set()
-        for contig in bin_obj.contigs:
-            overlapping_bin_keys |= contig_to_bin_keys[contig]
-
-        # Discard them
-        discarded_keys |= overlapping_bin_keys
-
-        # Remove discarded bins from index to shrink future lookups
-        remove_bins_from_index(
-            overlapping_bin_keys, good_enough_bins, contig_to_bin_keys
-        )
+    for key in ordered:
+        candidate = bins_dict[key]
+        if candidate.contigs.isdisjoint(occupied):
+            selected_bins.append(candidate)
+            occupied |= candidate.contigs
 
     logger.info(f"Selected {len(selected_bins)} bins")
 
@@ -611,11 +631,11 @@ def sum_contig_lengths(
     key: bytes | None = None,
 ):
     if cache is None:
-        return int(contig_lengths[np.fromiter(bm_contigs, dtype=np.int32)].sum())
+        return int(contig_lengths[np.fromiter(bm_contigs, dtype=np.intp)].sum())
     if key is None:
         key = bm_contigs.serialize()
     if key not in cache:
-        cache[key] = int(contig_lengths[np.fromiter(bm_contigs, dtype=np.int32)].sum())
+        cache[key] = int(contig_lengths[np.fromiter(bm_contigs, dtype=np.intp)].sum())
     return cache[key]
 
 
@@ -752,10 +772,13 @@ def create_intermediate_bins(
         f"Union: {union_count} bins created, {union_size_discarded_count} discarded due to size constraints."
     )
 
-    contig_key_to_new_bin: dict[bytes, Bin] = {
-        contig_key: Bin(contigs, is_original=False)
-        for contig_key, contigs in contig_key_to_new_contigs_set.items()
-    }
+    # Reuse this dictionary and its exact keys; avoid a second full hash table.
+    discarded_contig_set_keys.clear()
+    for contig_key, contigs in contig_key_to_new_contigs_set.items():
+        candidate = Bin(contigs, is_original=False)
+        candidate._contigs_key = contig_key
+        contig_key_to_new_contigs_set[contig_key] = candidate
+    contig_key_to_new_bin = contig_key_to_new_contigs_set
 
     logger.info(
         f"{len(contig_key_to_new_bin)} new bins created from {len(contig_key_to_initial_bin)} input bins."

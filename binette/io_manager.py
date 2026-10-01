@@ -1,9 +1,9 @@
+import csv
 import logging
 from collections import defaultdict
 from collections.abc import Iterable
 from pathlib import Path
 
-import pandas as pd
 import pyfastx
 
 from binette.bin_manager import Bin
@@ -141,39 +141,42 @@ def write_bin_info(bins: Iterable[Bin], output: Path, add_contigs: bool = False)
     if add_contigs:
         columns.append("contigs")
 
-    # Create a list of dictionaries to build the DataFrame
-    data = []
-    for bin_obj in sorted(
-        bins, key=lambda x: (-x.score, -x.N50, -x.is_original, x.contigs_key)
-    ):
-        original_name = bin_obj.original_name if bin_obj.original_name else bin_obj.name
-        origins = bin_obj.origin if bin_obj.is_original else {"binette"}
+    # Keep the required sort order, but stream report rows rather than a second
+    # all-candidate dictionary list and DataFrame.
+    with output.open("w", newline="") as handle:
+        writer = csv.DictWriter(
+            handle, fieldnames=columns, delimiter="\t", lineterminator="\n"
+        )
+        writer.writeheader()
+        for bin_obj in sorted(
+            bins, key=lambda x: (-x.score, -x.N50, -x.is_original, x.contigs_key)
+        ):
+            original_name = (
+                bin_obj.original_name if bin_obj.original_name else bin_obj.name
+            )
+            origins = bin_obj.origin if bin_obj.is_original else {"binette"}
 
-        bin_info = {
-            "name": bin_obj.name,
-            "origin": ";".join(origins),
-            "is_original": bin_obj.is_original,
-            "original_name": original_name,
-            "completeness": bin_obj.completeness,
-            "contamination": bin_obj.contamination,
-            "score": round(bin_obj.score, 2),
-            "checkm2_model": bin_obj.checkm2_model,
-            "size": bin_obj.length,
-            "N50": bin_obj.N50,
-            "coding_density": round(bin_obj.coding_density, 4)
-            if bin_obj.coding_density is not None
-            else None,
-            "contig_count": len(bin_obj.contigs),
-        }
+            bin_info = {
+                "name": bin_obj.name,
+                "origin": ";".join(origins),
+                "is_original": bin_obj.is_original,
+                "original_name": original_name,
+                "completeness": bin_obj.completeness,
+                "contamination": bin_obj.contamination,
+                "score": round(bin_obj.score, 2),
+                "checkm2_model": bin_obj.checkm2_model,
+                "size": bin_obj.length,
+                "N50": bin_obj.N50,
+                "coding_density": round(bin_obj.coding_density, 4)
+                if bin_obj.coding_density is not None
+                else None,
+                "contig_count": len(bin_obj.contigs),
+            }
 
-        if add_contigs:
-            bin_info["contigs"] = ";".join(str(c) for c in bin_obj.contigs)
+            if add_contigs:
+                bin_info["contigs"] = ";".join(str(c) for c in bin_obj.contigs)
 
-        data.append(bin_info)
-
-    # Create pandas DataFrame and write to TSV
-    df = pd.DataFrame(data, columns=columns)
-    df.to_csv(output, sep="\t", index=False)
+            writer.writerow(bin_info)
 
 
 def write_bins_fasta(

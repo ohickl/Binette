@@ -53,6 +53,22 @@ def instrument(module, name):
         if restored:
             with gzip.open(cache, "rb") as handle:
                 result = pickle.load(handle)
+            if name == "add_bin_metrics":
+                # Scoring now owns parent candidates and returns numeric worker
+                # results. Restore must update those inputs, not leave their
+                # dictionary pointing at unscored objects.
+                targets = list(args[0] if args else kwargs["bins"])
+                for target, saved in zip(targets, result, strict=True):
+                    if target.contigs_key != saved.contigs_key:
+                        raise ValueError("Score stage-cache membership order differs")
+                    for field in (
+                        "completeness",
+                        "contamination",
+                        "score",
+                        "_checkm2_model_index",
+                    ):
+                        setattr(target, field, getattr(saved, field))
+                result = targets
         else:
             result = original(*args, **kwargs)
         emit(

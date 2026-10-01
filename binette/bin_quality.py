@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-import gc
 import logging
 import os
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Iterator
-from itertools import islice
+from itertools import chain, islice
 
-import joblib
 import numpy as np
 import pandas as pd
 from checkm2 import keggData
@@ -100,18 +98,21 @@ def get_bins_metadata_df(
         for c in b.contigs:
             contig_to_bins[c].append(b.contigs_key)
 
-    # distribute CDS counts
-    for contig, cds in contig_to_cds_count.items():
+    # Only contigs in this batch contribute; unrelated assembly evidence is not scanned.
+    for contig in contig_to_bins:
+        cds = contig_to_cds_count.get(contig, 0)
         for bin_key in contig_to_bins.get(contig, []):
             cds_per_bin[bin_key] += cds
 
     # distribute AA lengths
-    for contig, length in contig_to_aa_length.items():
+    for contig in contig_to_bins:
+        length = contig_to_aa_length.get(contig, 0)
         for bin_key in contig_to_bins.get(contig, []):
             aa_len_per_bin[bin_key] += length
 
     # distribute AA counters
-    for contig, counter in contig_to_aa_counter.items():
+    for contig in contig_to_bins:
+        counter = contig_to_aa_counter.get(contig, {})
         for bin_key in contig_to_bins.get(contig, []):
             aa_counter_per_bin[bin_key].update(counter)
 
@@ -291,6 +292,14 @@ def prepare_contig_sizes(contig_to_size: dict[int, int]) -> np.ndarray:
     :return: Numpy array where the index corresponds to the contig ID
              and the value is the contig size.
     """
+    if not contig_to_size:
+        return np.zeros(0, dtype=np.int64)
+    if any(not isinstance(key, int) or key < 0 for key in contig_to_size) or any(
+        int(value) != value or value < 0 for value in contig_to_size.values()
+    ):
+        raise ValueError("Contig IDs and sizes must be nonnegative integers")
+    if sum(map(int, contig_to_size.values())) > np.iinfo(np.int64).max:
+        raise OverflowError("Assembly length exceeds int64 reduction")
     max_id = max(contig_to_size)
     contig_sizes = np.zeros(max_id + 1, dtype=np.int64)
     for contig_id, size in contig_to_size.items():
@@ -322,10 +331,16 @@ def add_bin_size_and_N50(bins: Iterable[Bin], contig_to_size: dict[int, int]):
     :return: None. The bin objects are updated in place with size and N50.
     """
     # TODO use numpy array everywhere instead of contig_to_size
-    contig_sizes = prepare_contig_sizes(contig_to_size)
+    contig_sizes = (
+        contig_to_size
+        if isinstance(contig_to_size, np.ndarray)
+        else prepare_contig_sizes(contig_to_size)
+    )
 
     for bin_obj in bins:
-        lengths = contig_sizes[list(bin_obj.contigs)]  # fast bulk lookup
+        lengths = contig_sizes[
+            np.fromiter(bin_obj.contigs, dtype=np.intp)
+        ]  # fast bulk lookup
         total_len = lengths.sum()
         n50 = compute_N50(lengths)
 
@@ -348,135 +363,158 @@ def add_bin_coding_density(
 
 
 def add_bin_metrics(
-    bins: list[Bin],
+    bins,
     contig_info: dict,
     contamination_weight: float,
     threads: int = 1,
     checkm2_batch_size: int = 500,
     disable_progress_bar: bool = False,
+    quality_workers: int | None = None,
+    score_cache=None,
 ):
-    """
-    Add metrics to a Set of bins.
+    """Score bounded membership tasks, updating the parent's candidates in place.
 
-    :param bins: Set of bin objects.
-    :param contig_info: Dictionary containing contig information.
-    :param contamination_weight: Weight for contamination assessment.
-    :param threads: Number of threads for parallel processing (default is 1).
-                    If threads=1, all processing happens sequentially using one thread.
-                    If threads>1, processing is parallelized across multiple processes.
-                    The number of parallel workers will be approximately equal to threads.
-    :param checkm2_batch_size: Maximum number of bins to send to CheckM2 at once within each process
-                              to control memory usage. This creates sub-batches
-                              within each worker to manage CheckM2's memory consumption.
-    :param disable_progress_bar: Disable the progress bar if True.
-
-    :return: List of processed bin objects with quality metrics added.
+    CPU allocation and model-owner count are separate budgets. Evidence is
+    read-only shared mmap; workers return three numeric columns, never Bin objects.
+    Optional atomic shards recover completed batches across interruptions.
     """
-    if not bins:
-        logger.warning("No bins provided for quality assessment")
+    import concurrent.futures as cf
+    import multiprocessing
+    import tempfile
+    from pathlib import Path
+
+    from threadpoolctl import threadpool_limits
+
+    from binette.features import ContigEvidence
+    from binette.score_store import ScoreStore, scoring_identity
+    from binette.scoring import (
+        initialize_worker,
+        make_processors,
+        predict_batch,
+        save_reference,
+        score_worker,
+    )
+
+    if checkm2_batch_size <= 0 or threads <= 0:
+        raise ValueError("Batch size and CPU allocation must be positive")
+    bins_list = bins if isinstance(bins, list) else list(bins)
+    if not bins_list:
         return []
-
-    bins_list = list(bins)
-
-    logger.info(
-        f"Assessing bin quality for {len(bins_list)} bins using {threads} threads"
+    evidence = contig_info.get("_evidence")
+    if evidence is None:
+        evidence = ContigEvidence.from_dicts(
+            contig_info["contig_to_kegg_counter"],
+            contig_info["contig_to_cds_count"],
+            contig_info["contig_to_aa_counter"],
+            contig_info["contig_to_aa_length"],
+        )
+    workers = min(threads, 4) if quality_workers is None else quality_workers
+    if workers <= 0 or workers > threads:
+        raise ValueError("Model workers must be between one and the CPU allocation")
+    if quality_workers is None and len(bins_list) <= checkm2_batch_size * 12:
+        workers = 1
+    store = (
+        None
+        if score_cache is None
+        else ScoreStore(
+            Path(score_cache),
+            scoring_identity(
+                evidence, bins_list, checkm2_batch_size, contamination_weight
+            ),
+        )
     )
 
-    # Extract data from contig_info
-    contig_to_kegg_counter = contig_info["contig_to_kegg_counter"]
-    contig_to_cds_count = contig_info["contig_to_cds_count"]
-    contig_to_aa_counter = contig_info["contig_to_aa_counter"]
-    contig_to_aa_length = contig_info["contig_to_aa_length"]
+    def apply_result(start, values, persist=True):
+        if store is not None and persist:
+            store.write(start, values)
+        for index, (comp, cont, model) in enumerate(zip(*values, strict=True), start):
+            candidate = bins_list[index]
+            candidate.add_quality(float(comp), float(cont), contamination_weight)
+            candidate._checkm2_model_index = 0 if model else 1
 
-    def _process_sequential():
-        """Helper function for sequential processing"""
-        modelPostprocessing = get_modelPostprocessing()
-        postProcessor = modelPostprocessing.modelProcessor(threads)
-        return assess_bins_quality(
-            bins=bins_list,
-            contig_to_kegg_counter=contig_to_kegg_counter,
-            contig_to_cds_count=contig_to_cds_count,
-            contig_to_aa_counter=contig_to_aa_counter,
-            contig_to_aa_length=contig_to_aa_length,
-            contamination_weight=contamination_weight,
-            postProcessor=postProcessor,
-            threads=threads,
-            checkm2_batch_size=checkm2_batch_size,
-        )
-
-    min_bins_per_chunk = checkm2_batch_size * 6
-
-    if threads == 1 or len(bins_list) <= min_bins_per_chunk * 2:
-        if len(bins_list) <= min_bins_per_chunk:
-            logger.info(
-                f"Only {len(bins_list)} bins (≤ {min_bins_per_chunk}). Using sequential processing to avoid multiprocessing overhead."
-            )
-        return _process_sequential()
-
-    # For parallel processing, use joblib
-    # Calculate number of chunks ensuring each chunk has sufficient work
-    max_possible_chunks = len(bins_list) // min_bins_per_chunk
-    n_chunks = max(1, min(threads * 2, max_possible_chunks))
-
-    n_jobs = min(threads, n_chunks)
-    # Use balanced chunking to distribute work evenly across available threads
-    chunks_list = balanced_chunks(bins_list, n_chunks)
+    def tasks():
+        for start, batch in membership_batches(bins_list, checkm2_batch_size):
+            restored = None if store is None else store.load(start, len(batch))
+            if restored is not None:
+                apply_result(start, restored, persist=False)
+                progress.update(progress_task, advance=len(batch))
+            else:
+                yield start, [candidate.contigs_key for candidate in batch]
 
     logger.info(
-        f"Created {len(chunks_list)} balanced chunks for {n_jobs} parallel jobs"
+        "Scoring %s bins with %s persistent model owners", len(bins_list), workers
     )
-    logger.info(
-        f"Configuration: {len(bins_list)} bins, {threads} threads, {n_chunks} chunks, batch_size={checkm2_batch_size}"
-    )
-    for idx, chunk in enumerate(chunks_list):
-        logger.debug(f"Chunk {idx + 1}/{len(chunks_list)} contains {len(chunk)} bins")
+    with (
+        Progress(disable=disable_progress_bar) as progress,
+        threadpool_limits(limits=1),
+    ):
+        progress_task = progress.add_task("Assessing bin quality", total=len(bins_list))
+        task_iterator = iter(tasks())
+        first = next(task_iterator, None)
+        if first is None:
+            return bins_list
+        if workers == 1:
+            prediction, post = make_processors(1)
+            for start, keys in chain((first,), task_iterator):
+                order = sorted(range(len(keys)), key=keys.__getitem__)
+                batch = bins_list[start : start + len(keys)]
+                values = predict_batch(
+                    evidence,
+                    [batch[index].contigs for index in order],
+                    prediction,
+                    post,
+                )
+                inverse = np.argsort(order)
+                apply_result(start, tuple(value[inverse] for value in values))
+                progress.update(progress_task, advance=len(keys))
+            return bins_list
 
-    # Define a simple function to process a chunk
-    def process_chunk(chunk_bins):
-        # Initialize TensorFlow/Keras environment for this subprocess
-        _initialize_keras_environment()
+        # Spawn avoids inheriting a TensorFlow runtime initialized by original scoring.
+        # Persist only numeric evidence in task-local storage; models live per worker.
+        with tempfile.TemporaryDirectory(prefix="binette-evidence-") as directory:
+            root = Path(directory)
+            evidence.save(root)
+            save_reference(root)
+            with cf.ProcessPoolExecutor(
+                max_workers=workers,
+                mp_context=multiprocessing.get_context("spawn"),
+                initializer=initialize_worker,
+                initargs=(str(root),),
+            ) as pool:
+                remaining = iter(chain((first,), task_iterator))
+                pending = {}
+                while True:
+                    while len(pending) < 2 * workers:
+                        task = next(remaining, None)
+                        if task is None:
+                            break
+                        pending[pool.submit(score_worker, task)] = len(task[1])
+                    if not pending:
+                        break
+                    done, _ = cf.wait(pending, return_when=cf.FIRST_COMPLETED)
+                    for future in done:
+                        count = pending.pop(future)
+                        start, values = future.result()
+                        apply_result(start, values)
+                        progress.update(progress_task, advance=count)
+    return bins_list
 
-        # Determine optimal thread count for this worker
-        # For best efficiency, we allocate a portion of total threads to each worker
-        # Math.ceil(total_threads / n_jobs) would be most aggressive
-        # But we use 1 thread per worker as the default to avoid oversubscription
-        worker_threads = max(
-            1, threads // (2 * n_jobs)
-        )  # Conservative thread allocation
 
-        # Create local processor instance
-        modelPostprocessing = get_modelPostprocessing()
-        local_postProcessor = modelPostprocessing.modelProcessor(worker_threads)
-
-        # Process bins with nested chunking for memory management
-        return assess_bins_quality(
-            bins=chunk_bins,
-            contig_to_kegg_counter=contig_to_kegg_counter,
-            contig_to_cds_count=contig_to_cds_count,
-            contig_to_aa_counter=contig_to_aa_counter,
-            contig_to_aa_length=contig_to_aa_length,
-            contamination_weight=contamination_weight,
-            postProcessor=local_postProcessor,
-            threads=worker_threads,  # Use allocated threads in each worker
-            checkm2_batch_size=checkm2_batch_size,
-        )
-
-    # Process chunks in parallel using joblib
-    with Progress(disable=disable_progress_bar) as progress:
-        task = progress.add_task("Assessing bin quality", total=len(bins_list))
-
-        # Use joblib for parallelization
-        results = joblib.Parallel(n_jobs=n_jobs)(
-            joblib.delayed(process_chunk)(chunk) for chunk in chunks_list
-        )
-
-        # Combine results
-        all_bins = []
-        for chunk_result in results:
-            all_bins.extend(chunk_result)
-            progress.update(task, advance=len(chunk_result))
-
-        return all_bins
+def membership_batches(bins: list, max_bins: int, max_memberships: int = 65536):
+    """Bound both model rows and sparse incidence work; keep oversized bins whole."""
+    if max_bins <= 0 or max_memberships <= 0:
+        raise ValueError("Batch limits must be positive")
+    start = 0
+    while start < len(bins):
+        stop, memberships = start, 0
+        while stop < len(bins) and stop - start < max_bins:
+            size = len(bins[stop].contigs)
+            if stop > start and memberships + size > max_memberships:
+                break
+            memberships += size
+            stop += 1
+        yield start, bins[start:stop]
+        start = stop
 
 
 def chunks(iterable, size: int) -> Iterator[tuple]:
@@ -603,9 +641,6 @@ def assess_bins_quality(
         )
 
         all_processed_bins.extend(processed_batch)
-
-        # Force garbage collection between batches to free memory
-        gc.collect()
 
     return all_processed_bins
 

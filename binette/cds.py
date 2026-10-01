@@ -1,17 +1,24 @@
 import concurrent.futures as cf
 import gzip
+import io
 import logging
-import multiprocessing.pool
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pyfastx
 import pyrodigal
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class ProteinSummary:
+    cds_count: int
+    amino: Counter
+    aa_length: int
 
 
 def get_contig_from_cds_name(cds_name: str) -> str:
@@ -27,7 +34,7 @@ def get_contig_from_cds_name(cds_name: str) -> str:
 
 
 def predict(
-    contigs_iterator: Iterator, outfaa: str, threads: int = 1
+    contigs_iterator: Iterator, outfaa: str, threads: int = 1, summarize: bool = False
 ) -> tuple[dict[str, list[str]], dict[str, int | None]]:
     """
     Predict open reading frames with Pyrodigal.
@@ -43,23 +50,50 @@ def predict(
 
     logger.info(f"Predicting CDS sequences with Pyrodigal using {threads} threads")
 
-    with multiprocessing.pool.ThreadPool(processes=threads) as pool:
-        contig_and_genes = pool.starmap(
-            predict_genes,
-            ((orf_finder.find_genes, name, seq) for name, seq in contigs_iterator),
-        )
-
-    write_faa(outfaa, contig_and_genes)
-
-    contig_to_genes = {
-        contig_id: [gene.translate() for gene in pyrodigal_genes]
-        for contig_id, pyrodigal_genes in contig_and_genes
-    }
-
-    contig_to_coding_length = {
-        contig_id: get_contig_coding_len(pyrodigal_genes, len(pyrodigal_genes.sequence))
-        for contig_id, pyrodigal_genes in contig_and_genes
-    }
+    if threads <= 0:
+        raise ValueError("Gene-prediction workers must be positive")
+    contig_to_genes, contig_to_coding_length = {}, {}
+    remaining = iter(contigs_iterator)
+    with (
+        cf.ThreadPoolExecutor(max_workers=threads) as pool,
+        gzip.open(outfaa, "wt") as output,
+    ):
+        pending = deque()
+        while True:
+            while len(pending) < 2 * threads:
+                item = next(remaining, None)
+                if item is None:
+                    break
+                pending.append(pool.submit(predict_genes, orf_finder.find_genes, *item))
+            if not pending:
+                break
+            contig_id, genes = pending.popleft().result()
+            # Write upstream's exact headers/wrapping and translate only once.
+            buffer = io.StringIO()
+            genes.write_translations(buffer, contig_id)
+            text = buffer.getvalue()
+            output.write(text)
+            sequences = []
+            pieces = []
+            for line in text.splitlines():
+                if line.startswith(">"):
+                    if pieces:
+                        sequences.append("".join(pieces))
+                    pieces = []
+                else:
+                    pieces.append(line.strip())
+            if pieces:
+                sequences.append("".join(pieces))
+            if summarize:
+                amino = get_aa_composition(sequences)
+                contig_to_genes[contig_id] = ProteinSummary(
+                    len(genes), amino, sum(amino.values())
+                )
+            else:
+                contig_to_genes[contig_id] = sequences
+            contig_to_coding_length[contig_id] = get_contig_coding_len(
+                genes, len(genes.sequence)
+            )
 
     return contig_to_genes, contig_to_coding_length
 
@@ -76,10 +110,17 @@ def get_contig_coding_len(
     """
     if contig_length == 0:
         return None
-    conding_base_mask = np.zeros(contig_length)
-    for g in genes:
-        conding_base_mask[g.begin - 1 : g.end] = 1
-    return np.sum(conding_base_mask)
+    # Merge half-open intervals: no per-base float64/bool allocation is needed.
+    intervals = sorted(
+        slice(g.begin - 1, g.end).indices(contig_length)[:2] for g in genes
+    )
+    covered = 0
+    right = 0
+    for begin, end in intervals:
+        if end > max(begin, right):
+            covered += end - max(begin, right)
+            right = end
+    return covered
 
 
 def predict_genes(find_genes, name, seq) -> tuple[str, pyrodigal.Genes]:
@@ -118,7 +159,7 @@ def is_nucleic_acid(sequence: str) -> bool:
     return False
 
 
-def parse_faa_file(faa_file: str) -> dict[str, list[str]]:
+def parse_faa_file(faa_file: str, summarize: bool = False) -> dict:
     """
     Parse a FASTA file containing protein sequences and organize them by contig.
 
@@ -132,7 +173,18 @@ def parse_faa_file(faa_file: str) -> dict[str, list[str]]:
     # Iterate through the FASTA file and parse sequences
     for name, seq in pyfastx.Fastx(faa_file):
         contig = get_contig_from_cds_name(name)
-        contig_to_genes[contig].append(seq)
+        if summarize:
+            previous = contig_to_genes.get(contig)
+            amino = Counter() if previous is None else previous.amino
+            amino.update(seq)
+            amino.pop("*", None)
+            contig_to_genes[contig] = ProteinSummary(
+                1 if previous is None else previous.cds_count + 1,
+                amino,
+                sum(amino.values()),
+            )
+        else:
+            contig_to_genes[contig].append(seq)
 
         # Concatenate up to the first 20 sequences for validation
         if len(checked_sequences) < 20:
@@ -160,7 +212,7 @@ def get_aa_composition(genes: list[str]) -> Counter:
     """
     aa_counter = Counter()
     for gene in genes:
-        aa_counter += Counter(gene)
+        aa_counter.update(gene)
     # remove * from Counter
     aa_counter.pop("*", None)
     return aa_counter
@@ -203,6 +255,20 @@ def get_contig_cds_metadata(
     :param threads: Number of CPU threads to use.
     :return: A tuple containing dictionaries for CDS count, amino acid composition, and total amino acid length.
     """
+    if contig_to_genes and all(
+        isinstance(item, ProteinSummary) for item in contig_to_genes.values()
+    ):
+        return {
+            "contig_to_cds_count": {
+                key: item.cds_count for key, item in contig_to_genes.items()
+            },
+            "contig_to_aa_counter": {
+                key: item.amino for key, item in contig_to_genes.items()
+            },
+            "contig_to_aa_length": {
+                key: item.aa_length for key, item in contig_to_genes.items()
+            },
+        }
     contig_to_cds_count = {
         contig: len(genes) for contig, genes in contig_to_genes.items()
     }

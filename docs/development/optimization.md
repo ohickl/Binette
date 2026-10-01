@@ -165,3 +165,102 @@ candidate SHA-256 sum is
 `b78448f130bea63c74ffc8a3238eff4bd790c7b60c60889a17473c2a2579ef34`.
 The simultaneous baseline and modified candidate scoring remain pending;
 count agreement with the historical run does not prove output equivalence.
+
+
+## Bounded scoring and retention increment — 2026-10-01
+
+The first full comparison is now terminal: baseline `29167715` completed in
+2h25m16s, first improved `29167714` in 1h30m58s, comparator `29167739` passed.
+All 6,945,894 candidate fingerprints agree; final memberships and scientific
+metrics match exactly (26 bins, 5,053 contigs). Curated evidence is in
+`crg_full_profile_comparison_2026-10-01.json`. Peak summed process-tree RssAnon
+was 50.06 versus 48.52 GiB. These are single executions on shared infrastructure,
+not replicated speed or memory estimates. Earlier pending claims above are
+historical and superseded by this receipt.
+
+The next implementation replaces CLI numerical scoring with a cached feature
+plan and checked, immutable contig evidence: uint32 count storage promotes to
+int64 when required, sparse integer KO evidence and safe integer reductions,
+and unchanged float64 model inputs. Candidate incidence and model rows are
+bounded; tasks contain at most 500 bins and normally at most 65,536 total
+memberships (a single larger bin remains intact). No assembly-wide dictionary
+scan or pandas feature round trip occurs per numerical batch.
+
+One model pair lives per persistent spawn worker, with default ownership capped
+at four and an explicit `--quality-workers` override bounded by `--threads`.
+Small default workloads use one owner. Evidence/reference arrays are read-only
+mmap shared files in task-local temporary storage. Queued tasks are capped at
+twice the owner count; results contain only completeness, contamination and a
+uint8 model flag, updating parent objects in place. TensorFlow and native BLAS
+prediction thread budgets are one per owner. Reference norms are cached and
+cosine maxima reduce 1,024-row blocks, preserving the upstream multiply/divide
+arithmetic, zero norms, nonfinite propagation and threshold order. Per-batch
+full garbage collection is removed; normal Python GC remains enabled.
+
+`--score-cache` defaults to `OUTDIR/.score_shards`. Atomic numeric NPZ shards
+and count/SHA seals live under an evidence/candidate-order/code/model/feature/
+version namespace. A shared namespace lock protects concurrent writers without
+one lock inode per batch. Unsealed files are not trusted, corruption fails
+closed, sealed batches restore without inference, and a missing batch alone is
+inferred. Scores retain float64 precision and the model flag uses uint8. These
+shards recover scoring; the isolated profiler separately retains gene/coding,
+DIAMOND and candidate stage objects. Protein-only legacy CLI `--resume` still
+omits coding density and is not the accepted cold-recovery mechanism. Nothing
+in this increment introduces Nextflow `-resume` or deletes existing stores.
+
+Candidates now use slots, an explicit shared cached membership key, shared
+immutable empty provenance, and compatible legacy pickle reads. Generation
+reuses its membership dictionary and releases rejected keys before wrapping
+bitmaps. An inverted membership index creates original graph edges in the
+same order as the pairwise oracle. Selection uses one occupied bitmap in
+unchanged ranked order, including caller dictionary-key ties. Normal CLI output
+filters quality-ineligible hybrids before size/N50; debug mode retains the
+all-candidate report. Original metrics and the known exact-half N50 behavior
+are preserved. TSV reports stream in the same order and byte representation.
+
+Gene futures are bounded and translated once into the exact upstream protein
+output plus compact CDS/amino/coding summaries. Coding length uses interval
+union rather than a per-base float64 mask. DIAMOND annotations parse in 100k-row
+chunks, retaining the required KO counters only. Python protein/KO containers
+are released after typed evidence is built. Optional
+`BINETTE_SCORING_TELEMETRY` records feature/inference/postprocessing timings and
+worker RSS/PSS snapshots; process-tree RssAnon sampling remains in the profiler.
+
+Focused verification: `pixi run --locked unit` passed 134 tests with the known
+strict N50 xfail; `pixi run --locked equivalence` passed 21 controls, including
+real model inference with 1/2/4 owners, no-hit bins, exact report bytes and
+complete score restore. Partial restore, bounded memberships, overflow
+promotion/rejection, coding intervals and exact protein summaries also pass.
+Ruff and whitespace checks pass. The optional external upstream dataset is
+absent; no full dataset suite or production pipeline qualification is claimed.
+
+Scoring-core technical gate `29170106` completed 0:0 in 2m16s on the frozen production
+image. It verifies the canonical sample-0 0.1% fixture and adds a nonempty
+8-bin frozen-runtime numerical control with two owners, full restore without
+model construction, and one deliberately missing shard. Receipt:
+
+```text
+binette-isolated-microgate-v2 pairs=16427 variants=2 graph_oracles=12 numeric_bins=8 workers=2 complete_restore=PASS partial_restore=PASS failed=0
+```
+
+Source manifest SHA-256:
+`53094ada9bcd454ee0f553ab146e6877ee011b2ae09006688cddece0efa4ebf4`.
+Manifest and gate: `crg_scoring_sources_2026-10-01.json` and
+`crg_scoring_microgate_2026-10-01.json`. Intermediate gate `29170065` also
+passed, but its earlier snapshot is not the final qualification receipt.
+Full follow-up `29170554` runs the identical sample-13 raw-only inputs at
+16 CPUs/96G/12h and four model owners. Comparator `29170555` reuses the
+completed baseline under `profile_20261001_86e515d72d97`; no baseline rerun.
+Current isolated root:
+`/no_backup/abaud/data/secondary/rat_mag_catalog/analysis/nf-imp3_tests/binette_optimization/profile2_20261001_53094ada9bcd`.
+Final score-seal hardening passed gate `29171573 COMPLETED 0:0` in 2m47s,
+with the same paired/nonempty/complete/partial recovery verdict. Final source
+manifest `a3210501a9f34ef74d924c1d73dd80d61955b8162488170a8bd1655c11cfba3e`
+adds TensorFlow/scikit-learn compatibility versions and rejects invalid arrays
+before sealing. The full benchmark preserves its earlier immutable snapshot;
+feature/inference/selection code is identical. Final seal manifests/receipts
+are `crg_score_seal_sources_2026-10-01.json` and
+`crg_score_seal_microgate_2026-10-01.json` in fork development documentation.
+
+Final follow-up outputs, memory/performance measurements and scientific
+comparison remain pending. Production nf-imp3 pins/resources are unchanged.

@@ -185,6 +185,16 @@ def run(bundle, root, variant, assembly, tables, database, threads):
         "10",
         "--no-progress",
     ]
+    if variant == "modified":
+        command.extend(
+            [
+                "--quality-workers",
+                str(min(threads, 4)),
+                "--score-cache",
+                str(target / "score_shards"),
+            ]
+        )
+        env["BINETTE_SCORING_TELEMETRY"] = str(target / "scoring.jsonl")
     contract = {
         "argv": command,
         "source": env["BINETTE_PROFILE_SOURCE"],
@@ -260,6 +270,75 @@ def validate_graphs(bundle):
             raise ValueError("Unique subset enumeration differs from exhaustive oracle")
 
 
+def validate_numeric(bundle, root):
+    """Nonempty scoring control supplements the tiny canonical assembly path."""
+    from collections import Counter
+    from unittest.mock import patch
+
+    from pyroaring import BitMap
+
+    from binette import bin_manager, bin_quality
+    from binette.features import ContigEvidence, feature_plan
+
+    spec = importlib.util.spec_from_file_location(
+        "baseline_quality", bundle / "baseline/binette/bin_quality.py"
+    )
+    upstream = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(upstream)
+    kos = feature_plan().kos
+    kegg = {i: Counter({kos[i]: i + 1, kos[i + 10]: 2}) for i in range(4)}
+    counts = {i: 20 + i for i in range(4)}
+    amino = {
+        i: Counter({aa: 10 + i for aa in "ACDEFGHIKLMNPQRSTVWY"}) for i in range(4)
+    }
+    lengths = {i: sum(amino[i].values()) for i in range(4)}
+    memberships = ([0, 1], [1, 2], [2, 3], [3], [0, 2], [0, 1, 3], [99], [0, 2, 99])
+    expected = [bin_manager.Bin(BitMap(item)) for item in memberships]
+    upstream.assess_bins_quality(
+        expected, kegg, counts, amino, lengths, 2, 8, threads=1
+    )
+    info = {"_evidence": ContigEvidence.from_dicts(kegg, counts, amino, lengths)}
+
+    def score():
+        actual = [bin_manager.Bin(BitMap(item)) for item in memberships]
+        bin_quality.add_bin_metrics(
+            actual,
+            info,
+            2,
+            threads=2,
+            quality_workers=2,
+            checkm2_batch_size=2,
+            score_cache=root / "numeric_scores",
+            disable_progress_bar=True,
+        )
+        def fields(bins):
+            return [
+                (b.contigs_key, b.completeness, b.contamination, b.score, b.checkm2_model)
+                for b in bins
+            ]
+        if fields(actual) != fields(expected):
+            raise ValueError("Frozen-runtime numeric scores differ from upstream")
+
+    score()
+    with patch(
+        "binette.scoring.make_processors",
+        side_effect=AssertionError("Unexpected restore inference"),
+    ):
+        score()
+    # Model outputs survive a missing shard while sealed neighbors are retained.
+    namespace = next((root / "numeric_scores").iterdir())
+    for suffix in ("npz", "json"):
+        (namespace / f"0.{suffix}").rename(root / f"interrupted_score_0.{suffix}")
+    score()
+    return {
+        "bins": len(memberships),
+        "workers": 2,
+        "batch_size": 2,
+        "exact_scores_and_models": True,
+        "complete_and_partial_restore": True,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle", type=Path, required=True)
@@ -297,6 +376,7 @@ def main():
             second = args.root / "modified/output" / file
             if first.read_bytes() != second.read_bytes():
                 raise ValueError(f"Micro output differs: {file}")
+        numeric = validate_numeric(args.bundle, args.root)
         write_json(
             args.root / "gate.json",
             {
@@ -304,11 +384,12 @@ def main():
                 "pairs": 16427,
                 "graph_oracles": 12,
                 "runs": receipts,
+                "numeric_control": numeric,
                 "bundle_manifest_sha256": sha256(args.bundle / "sources.json"),
             },
         )
         print(
-            "binette-isolated-microgate-v1 pairs=16427 variants=2 graph_oracles=12 failed=0",
+            "binette-isolated-microgate-v2 pairs=16427 variants=2 graph_oracles=12 numeric_bins=8 workers=2 complete_restore=PASS partial_restore=PASS failed=0",
             flush=True,
         )
     else:

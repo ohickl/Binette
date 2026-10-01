@@ -36,8 +36,9 @@ def load(root, variant):
     return result, phases, identity, candidates, clusters, metrics
 
 
-def compare(root):
-    baseline, modified = (load(root, variant) for variant in ("baseline", "modified"))
+def compare(root, baseline_root=None):
+    baseline = load(baseline_root or root, "baseline")
+    modified = load(root, "modified")
     if baseline[2] != modified[2]:
         raise ValueError("Original-bin count or contig integer namespace differs")
     candidate_equal = all(
@@ -83,6 +84,8 @@ def compare(root):
     canonical = sorted(sorted(cluster) for cluster in baseline[4].values())
     return {
         "schema": "binette-full-depth-comparison-v1",
+        "baseline_root": str(baseline_root or root),
+        "modified_root": str(root),
         "verdict": "PASS"
         if candidate_equal and cluster_equal and scientific_equal
         else "FAIL",
@@ -113,9 +116,10 @@ def compare(root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--baseline-root", type=Path)
     args = parser.parse_args()
     try:
-        result = compare(args.root)
+        result = compare(args.root, args.baseline_root)
     except Exception as error:
         result = {
             "schema": "binette-full-depth-comparison-v1",

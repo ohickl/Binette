@@ -223,7 +223,7 @@ def test_get_contig_to_kegg_id():
 
     # Mocking relevant functions and classes used within the function
     with (
-        patch("pandas.read_csv", return_value=mocked_df),
+        patch("pandas.read_csv", return_value=[mocked_df]),
         patch("checkm2.keggData.KeggCalculator", return_value=mocked_kegg_calculator),
     ):
         # Call the function
@@ -248,7 +248,7 @@ def test_get_contig_to_kegg_id_empty_file():
     # Mock empty dataframe
     empty_df = pd.DataFrame()
 
-    with patch("pandas.read_csv", return_value=empty_df):
+    with patch("pandas.read_csv", return_value=[empty_df]):
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             diamond.get_contig_to_kegg_id(diamond_result_file)
 

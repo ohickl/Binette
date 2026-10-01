@@ -1,0 +1,30 @@
+{
+  "baseline": "4f8791e9b411708b0717dbd8e1296a68ac72ae24",
+  "files": {
+    "baseline/binette/__init__.py": "3259b81af99bffac90c7051bbf62ac73e0491572cf83d1f556dda257bc17ac0e",
+    "baseline/binette/bin_manager.py": "8aacea3ed17716e7f5e08ddc21347c30e243c76baa374cbb99f094cd1adf08b7",
+    "baseline/binette/bin_quality.py": "679108b32d25cd0875c4049f26506a72e85445d8b7fdcb28ffadc6dd80bc84d4",
+    "baseline/binette/cds.py": "a4c306e6d8bb17f9b945c9b971549d7d9ec925b4114262384591942c6af3073b",
+    "baseline/binette/contig_manager.py": "1249f9ae4e002402608920489bf24620d85f90015b6ad450a20c92fda627b06b",
+    "baseline/binette/diamond.py": "8daca1d52c478e73500dfb84e9e2268c0bb083da3bfc8e235f1cb32dd7012b77",
+    "baseline/binette/io_manager.py": "c1b1ae915acb2df735044ed9d426e522ce5ec78a0b84652ec3d853e2063a1d45",
+    "baseline/binette/main.py": "08aad5fb9afe5551b48acf6f883b4a6735853dbd5a91a376a47d6a04cfc6561d",
+    "modified/binette/__init__.py": "3259b81af99bffac90c7051bbf62ac73e0491572cf83d1f556dda257bc17ac0e",
+    "modified/binette/bin_manager.py": "b6bfcbc4d85bc5bbba5c9d3b3c4d1f226f557c68016774763b9812b33539748e",
+    "modified/binette/bin_quality.py": "8061d388cfab92153838f5153a510c8b88ad52e98f3b921cee387f776afbdf2c",
+    "modified/binette/cds.py": "99c6852a58495d8dfea631f1d07d1346c7b3df04ede72d66fb64d22b81007e2a",
+    "modified/binette/contig_manager.py": "1249f9ae4e002402608920489bf24620d85f90015b6ad450a20c92fda627b06b",
+    "modified/binette/diamond.py": "2501703cb3f72b9b8f708cf1e9a6a8fe93aa2e5bcd9fed3e2fc13c050039deee",
+    "modified/binette/features.py": "77c27d9df581801b8a29d7bca7d1765d5f307fd0dcf051b7c7a56b7587e40d19",
+    "modified/binette/io_manager.py": "c5f2b8e2ffc46c0974d711e3ccdea532d934315d913d2bfc9dc1dedda4fa7b84",
+    "modified/binette/main.py": "37b61871032b1b1416baee12721371ec54d6200d39d2a2a73adfe37e4d496a39",
+    "modified/binette/score_store.py": "6fd768a977ebda7d91c07ed5c89e1bec3e22e460040e32d7c1607c105f67ca0a",
+    "modified/binette/scoring.py": "cfb75f8bbc5d7a547ccb9729a7b14088bb116edc4c63e7dc7a96a2c0b64ae5de",
+    "scripts/compare_crg_profiles.py": "033ca666ad6273feb36c65c40206bef20c0aa0f03f9d56edab4f23b26f702fe2",
+    "scripts/profile_cli.py": "4e022128a6032c4931b6da2734699644de7b98c647175f8bcdc97f97f7c52fff",
+    "scripts/run_crg_profile.py": "c92d35208b6f86882cce5e7340af3dac4520a8712549300c163e997c231742fc",
+    "transfer.json": "bf5ffde4de810bb3702daed5cb45f5f92ff52ce9303ccb6d081c2879dc31c6f1"
+  },
+  "fork_parent": "c514f62d324187ead90964975ee8c4fcb6435b90",
+  "schema": "binette-profile-snapshot-v1"
+}
