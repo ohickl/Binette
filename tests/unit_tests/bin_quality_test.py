@@ -339,6 +339,7 @@ def test_add_bin_metrics_with_multiple_threads():
         contamination_weight,
         postProcessor,
         threads_arg,
+        modelProc=None,
     ):
         """Mock implementation that adds dummy quality metrics to bins."""
         for bin_obj in bins_batch:
@@ -370,7 +371,10 @@ def test_add_bin_metrics_with_multiple_threads():
         side_effect=mock_assess_bins_quality_batch,
     ):
         with patch("binette.bin_quality.joblib.Parallel", MockParallel):
-            with patch("binette.bin_quality.get_modelPostprocessing"):
+            with (
+                patch("binette.bin_quality.get_modelPostprocessing"),
+                patch("binette.bin_quality.get_modelProcessing"),
+            ):
                 # Call add_bin_metrics with multiple threads
                 result_bins = bin_quality.add_bin_metrics(
                     bins=bins,
@@ -435,6 +439,7 @@ def test_add_bin_metrics_sequential_path():
         contamination_weight,
         postProcessor,
         threads_arg,
+        modelProc=None,
     ):
         """Mock implementation that adds dummy quality metrics to bins."""
         for bin_obj in bins_batch:
@@ -451,7 +456,10 @@ def test_add_bin_metrics_sequential_path():
         "binette.bin_quality._assess_bins_quality_batch",
         side_effect=mock_assess_bins_quality_batch,
     ) as mock_assess:
-        with patch("binette.bin_quality.get_modelPostprocessing"):
+        with (
+            patch("binette.bin_quality.get_modelPostprocessing"),
+            patch("binette.bin_quality.get_modelProcessing"),
+        ):
             # Call add_bin_metrics with single thread
             result_bins = bin_quality.add_bin_metrics(
                 bins=bins,

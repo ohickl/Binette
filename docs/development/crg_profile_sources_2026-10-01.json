@@ -1,0 +1,25 @@
+{
+  "baseline": "4f8791e9b411708b0717dbd8e1296a68ac72ae24",
+  "files": {
+    "baseline/binette/__init__.py": "3259b81af99bffac90c7051bbf62ac73e0491572cf83d1f556dda257bc17ac0e",
+    "baseline/binette/bin_manager.py": "8aacea3ed17716e7f5e08ddc21347c30e243c76baa374cbb99f094cd1adf08b7",
+    "baseline/binette/bin_quality.py": "679108b32d25cd0875c4049f26506a72e85445d8b7fdcb28ffadc6dd80bc84d4",
+    "baseline/binette/cds.py": "a4c306e6d8bb17f9b945c9b971549d7d9ec925b4114262384591942c6af3073b",
+    "baseline/binette/contig_manager.py": "1249f9ae4e002402608920489bf24620d85f90015b6ad450a20c92fda627b06b",
+    "baseline/binette/diamond.py": "8daca1d52c478e73500dfb84e9e2268c0bb083da3bfc8e235f1cb32dd7012b77",
+    "baseline/binette/io_manager.py": "c1b1ae915acb2df735044ed9d426e522ce5ec78a0b84652ec3d853e2063a1d45",
+    "baseline/binette/main.py": "08aad5fb9afe5551b48acf6f883b4a6735853dbd5a91a376a47d6a04cfc6561d",
+    "modified/binette/__init__.py": "3259b81af99bffac90c7051bbf62ac73e0491572cf83d1f556dda257bc17ac0e",
+    "modified/binette/bin_manager.py": "029635d6965c39565d7be5cff6f38c85018927e264ce14f12542a60812de8f5d",
+    "modified/binette/bin_quality.py": "a5367211b62a3dbaab977a31097593bc4d5eea100dda2d27a2c0015e7db0351c",
+    "modified/binette/cds.py": "a04531b8b46e1295b1f999d42f0ac9d8f6ad14287c30405e5a639c65f84c697e",
+    "modified/binette/contig_manager.py": "1249f9ae4e002402608920489bf24620d85f90015b6ad450a20c92fda627b06b",
+    "modified/binette/diamond.py": "8daca1d52c478e73500dfb84e9e2268c0bb083da3bfc8e235f1cb32dd7012b77",
+    "modified/binette/io_manager.py": "c1b1ae915acb2df735044ed9d426e522ce5ec78a0b84652ec3d853e2063a1d45",
+    "modified/binette/main.py": "08aad5fb9afe5551b48acf6f883b4a6735853dbd5a91a376a47d6a04cfc6561d",
+    "scripts/profile_cli.py": "2bfd0510c5605732bdef3b927d6ec533edb32bfe09f3ccf63f559abf5c9a08dd",
+    "scripts/run_crg_profile.py": "ebea168ba73a1034823135d08b5442e26350f46e2d5d47c0fc540929a966b07e",
+    "transfer.json": "bf5ffde4de810bb3702daed5cb45f5f92ff52ce9303ccb6d081c2879dc31c6f1"
+  },
+  "schema": "binette-profile-snapshot-v1"
+}

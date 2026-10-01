@@ -256,7 +256,7 @@ def make_bins_from_bins_info(
             if bin_obj.contigs_key not in contig_key_to_bin:
                 contig_key_to_bin[bin_obj.contigs_key] = bin_obj
             else:
-                bin_obj.origin.add(set_name)
+                contig_key_to_bin[bin_obj.contigs_key].origin.add(set_name)
 
     return contig_key_to_bin
 
@@ -423,6 +423,34 @@ def get_all_possible_combinations(clique: list) -> Iterable[tuple]:
     )
 
 
+def iter_unique_bin_combinations(graph: nx.Graph) -> Iterable[tuple[bytes, ...]]:
+    """Yield each complete bin subset once, without materializing maximal cliques.
+
+    Every subset considered by the maximal-clique algorithm is a clique and
+    every clique belongs to a maximal clique. Increasing node order gives each
+    subset a single traversal path. The stack retains only the active path and
+    its remaining neighbors; graph-isolated originals remain outside this path.
+    """
+    stack = [((), sorted(graph), 0)]
+    while stack:
+        prefix, candidates, position = stack.pop()
+        if position == len(candidates):
+            continue
+        node = candidates[position]
+        stack.append((prefix, candidates, position + 1))
+        combination = (*prefix, node)
+        neighbors = graph[node]
+        extension = [
+            candidate
+            for candidate in itertools.islice(candidates, position + 1, None)
+            if candidate in neighbors
+        ]
+        if extension:
+            stack.append((combination, extension, 0))
+        if len(combination) >= 2:
+            yield combination
+
+
 def build_contig_index(bins_dict: dict[bytes, Bin]) -> dict[int, set[bytes]]:
     """
     Build an inverted index: contig_id -> set of contigs_key of bins containing it.
@@ -583,7 +611,7 @@ def sum_contig_lengths(
     key: bytes | None = None,
 ):
     if cache is None:
-        cache = {}
+        return int(contig_lengths[np.fromiter(bm_contigs, dtype=np.int32)].sum())
     if key is None:
         key = bm_contigs.serialize()
     if key not in cache:
@@ -607,14 +635,8 @@ def create_intermediate_bins(
 
     :return: A set of intermediate bins created from intersections, differences, and unions.
     """
-    bin_length_cache = {}
-
     logger.info("Making bin graph")
     connected_bins_graph = from_bins_to_bin_graph(contig_key_to_initial_bin.values())
-
-    cliques_of_bins = sorted(
-        [sorted(clique) for clique in nx.clique.find_cliques(connected_bins_graph)]
-    )
 
     logger.info("Creating union, difference, and intersection bins")
     logger.debug(f"{min_comp} min completeness for intersection and difference bins")
@@ -634,105 +656,89 @@ def create_intermediate_bins(
 
     contig_key_to_new_contigs_set = {}
     discarded_contig_set_keys = set()
+    processed_combinations = 0
     with Progress(disable=disable_progress_bar) as progress:
-        task = progress.add_task(
-            f"Processing {len(cliques_of_bins)} cliques of bins",
-            total=len(cliques_of_bins),
-        )
-        for clique in cliques_of_bins:
-            progress.update(task, advance=1)
-            bins_combinations = get_all_possible_combinations(clique)
+        task = progress.add_task("Processing unique bin combinations", total=None)
+        for bin_contig_keys in iter_unique_bin_combinations(connected_bins_graph):
+            processed_combinations += 1
+            if processed_combinations % 1024 == 0:
+                progress.update(task, advance=1024)
+            bins = [contig_key_to_initial_bin[ck] for ck in bin_contig_keys]
 
-            for bin_contig_keys in bins_combinations:
-                bins = [contig_key_to_initial_bin[ck] for ck in bin_contig_keys]
+            if all(b.completeness >= min_comp and b.length >= min_len for b in bins):
+                intersec_contigs = bins[0].contig_intersection(*bins[1:])
 
-                if all(
-                    b.completeness >= min_comp and b.length >= min_len for b in bins
-                ):
-                    intersec_contigs = bins[0].contig_intersection(*bins[1:])
+                if intersec_contigs:
+                    contig_key = intersec_contigs.serialize()
 
-                    if intersec_contigs:
-                        contig_key = intersec_contigs.serialize()
-
-                        if (
-                            contig_key not in contig_key_to_initial_bin
-                            and contig_key not in contig_key_to_new_contigs_set
-                            and contig_key not in discarded_contig_set_keys
-                        ):
-                            contigs_length = sum_contig_lengths(
-                                intersec_contigs,
-                                contig_lengths,
-                                cache=bin_length_cache,
-                                key=contig_key,
-                            )
-
-                            if contigs_length >= min_len and contigs_length <= max_len:
-                                contig_key_to_new_contigs_set[contig_key] = (
-                                    intersec_contigs
-                                )
-                                intersec_count += 1
-                            else:
-                                discarded_contig_set_keys.add(contig_key)
-                                intersec_size_discarded_count += 1
-
-                for bin_a in bins:
-                    if bin_a.completeness >= min_comp and bin_a.length >= min_len:
-                        diff_contigs = bin_a.contig_difference(
-                            *(b for b in bins if b != bin_a)
+                    if (
+                        contig_key not in contig_key_to_initial_bin
+                        and contig_key not in contig_key_to_new_contigs_set
+                        and contig_key not in discarded_contig_set_keys
+                    ):
+                        contigs_length = sum_contig_lengths(
+                            intersec_contigs,
+                            contig_lengths,
+                            key=contig_key,
                         )
 
-                        if diff_contigs:
-                            contig_key = diff_contigs.serialize()
+                        if contigs_length >= min_len and contigs_length <= max_len:
+                            contig_key_to_new_contigs_set[contig_key] = intersec_contigs
+                            intersec_count += 1
+                        else:
+                            discarded_contig_set_keys.add(contig_key)
+                            intersec_size_discarded_count += 1
 
-                            if (
-                                contig_key not in contig_key_to_initial_bin
-                                and contig_key not in contig_key_to_new_contigs_set
-                                and contig_key not in discarded_contig_set_keys
-                            ):
-                                contigs_length = sum_contig_lengths(
-                                    diff_contigs,
-                                    contig_lengths,
-                                    cache=bin_length_cache,
-                                    key=contig_key,
-                                )
+            for bin_a in bins:
+                if bin_a.completeness >= min_comp and bin_a.length >= min_len:
+                    diff_contigs = bin_a.contig_difference(
+                        *(b for b in bins if b != bin_a)
+                    )
 
-                                if (
-                                    contigs_length >= min_len
-                                    and contigs_length <= max_len
-                                ):
-                                    contig_key_to_new_contigs_set[contig_key] = (
-                                        diff_contigs
-                                    )
-                                    diff_count += 1
-                                else:
-                                    discarded_contig_set_keys.add(contig_key)
-                                    diff_size_discarded_count += 1
+                    if diff_contigs:
+                        contig_key = diff_contigs.serialize()
 
-                if all(
-                    b.contamination <= max_conta and b.length <= max_len for b in bins
-                ):
-                    union_contigs = bins[0].contig_union(*bins[1:])
-                    if union_contigs:
-                        contig_key = union_contigs.serialize()
                         if (
                             contig_key not in contig_key_to_initial_bin
                             and contig_key not in contig_key_to_new_contigs_set
                             and contig_key not in discarded_contig_set_keys
                         ):
                             contigs_length = sum_contig_lengths(
-                                union_contigs,
+                                diff_contigs,
                                 contig_lengths,
-                                cache=bin_length_cache,
                                 key=contig_key,
                             )
+
                             if contigs_length >= min_len and contigs_length <= max_len:
-                                contig_key_to_new_contigs_set[contig_key] = (
-                                    union_contigs
-                                )
-                                union_count += 1
+                                contig_key_to_new_contigs_set[contig_key] = diff_contigs
+                                diff_count += 1
                             else:
                                 discarded_contig_set_keys.add(contig_key)
-                                union_size_discarded_count += 1
+                                diff_size_discarded_count += 1
+
+            if all(b.contamination <= max_conta and b.length <= max_len for b in bins):
+                union_contigs = bins[0].contig_union(*bins[1:])
+                if union_contigs:
+                    contig_key = union_contigs.serialize()
+                    if (
+                        contig_key not in contig_key_to_initial_bin
+                        and contig_key not in contig_key_to_new_contigs_set
+                        and contig_key not in discarded_contig_set_keys
+                    ):
+                        contigs_length = sum_contig_lengths(
+                            union_contigs,
+                            contig_lengths,
+                            key=contig_key,
+                        )
+                        if contigs_length >= min_len and contigs_length <= max_len:
+                            contig_key_to_new_contigs_set[contig_key] = union_contigs
+                            union_count += 1
+                        else:
+                            discarded_contig_set_keys.add(contig_key)
+                            union_size_discarded_count += 1
+        progress.update(task, advance=processed_combinations % 1024)
+
+    logger.info(f"Processed {processed_combinations} unique bin combinations")
 
     logger.info(
         f"Intersection: {intersec_count} bins created, {intersec_size_discarded_count} discarded due to size constraints."

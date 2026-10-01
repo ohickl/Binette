@@ -207,14 +207,28 @@ def get_contig_cds_metadata(
         contig: len(genes) for contig, genes in contig_to_genes.items()
     }
 
-    contig_to_future = {}
+    completed_compositions = {}
+    remaining_contigs = iter(contig_to_genes.items())
     logger.info(f"Collecting contig amino acid composition using {threads} threads")
     with cf.ProcessPoolExecutor(max_workers=threads) as tpe:
-        for contig, genes in contig_to_genes.items():
-            contig_to_future[contig] = tpe.submit(get_aa_composition, genes)
+        pending = {}
+        # Keep workers fed without retaining one Future and queued payload per contig.
+        while True:
+            while len(pending) < 2 * threads:
+                try:
+                    contig, genes = next(remaining_contigs)
+                except StopIteration:
+                    break
+                pending[tpe.submit(get_aa_composition, genes)] = contig
+            if not pending:
+                break
+            done, _ = cf.wait(pending, return_when=cf.FIRST_COMPLETED)
+            for future in done:
+                contig = pending.pop(future)
+                completed_compositions[contig] = future.result()
 
     contig_to_aa_counter = {
-        contig: future.result() for contig, future in contig_to_future.items()
+        contig: completed_compositions[contig] for contig in contig_to_genes
     }
     logger.info("Calculating amino acid composition in parallel")
 

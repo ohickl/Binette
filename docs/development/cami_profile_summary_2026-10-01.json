@@ -1,0 +1,266 @@
+{
+  "date": "2026-10-01",
+  "schema": "binette-cami-profile-summary-v1",
+  "verification_job": 29167139,
+  "integrity_verdict": "binette-input-integrity-v1 artifacts=71 matched=71 failed=0",
+  "equivalence_verdict": "cami-bounded-candidate-equivalence-v1 cases=2 variants=3 repeats=3 matched=18 failed=0",
+  "transfer_manifest_sha256": "bf5ffde4de810bb3702daed5cb45f5f92ff52ce9303ccb6d081c2879dc31c6f1",
+  "cases": [
+    {
+      "sample": "cami3_sample_1",
+      "panel": "all_raw_plus_magscot",
+      "original_bins": 988,
+      "graph_edges": 13745,
+      "selected_original_bins": 8,
+      "selected_contigs": 30487,
+      "candidate_count": 35,
+      "fixture_sha256": "90bd80e4971438abfa3eea2590988e7df11b0848a72c45dd967a7fe9c40f560e",
+      "candidate_memberships_sha256": "869b69f77cdedc92856b94d5bd2052eb97bf7c3fea9c0984d4661df993526b38",
+      "clique_statistics": {
+        "maximal_cliques": 45297,
+        "size_histogram": {
+          "11": 363,
+          "10": 20961,
+          "6": 1758,
+          "9": 12836,
+          "8": 4695,
+          "7": 3584,
+          "5": 850,
+          "3": 25,
+          "4": 220,
+          "2": 5
+        },
+        "subset_visits_before_parent_gates": 30130809,
+        "pair_subset_visits": 1668300,
+        "distinct_pair_subsets": 13745,
+        "repeated_pair_subset_visits": 1654555
+      },
+      "variants": [
+        {
+          "variant": "baseline",
+          "repeats": 3,
+          "bin_manager_source_sha256": "8aacea3ed17716e7f5e08ddc21347c30e243c76baa374cbb99f094cd1adf08b7",
+          "phases": {
+            "load_tables_and_recorded_quality": {
+              "wall_seconds_median": 0.8063550369997756,
+              "wall_seconds_min": 0.799030581000352,
+              "wall_seconds_max": 1.0880434529999548,
+              "anonymous_rss_peak_bytes_max": 113532928
+            },
+            "full_overlap_graph_only": {
+              "wall_seconds_median": 0.5917310490003729,
+              "wall_seconds_min": 0.5724440079998203,
+              "wall_seconds_max": 0.6427698719999171,
+              "anonymous_rss_peak_bytes_max": 114843648
+            },
+            "read_selected_contig_lengths": {
+              "wall_seconds_median": 1.626021973999741,
+              "wall_seconds_min": 1.6163887519996933,
+              "wall_seconds_max": 1.9735708880002676,
+              "anonymous_rss_peak_bytes_max": 123678720
+            },
+            "bounded_candidate_generation": {
+              "wall_seconds_median": 0.06420373799983281,
+              "wall_seconds_min": 0.050515595999968355,
+              "wall_seconds_max": 0.1100220260000242,
+              "anonymous_rss_peak_bytes_max": 123703296
+            }
+          }
+        },
+        {
+          "variant": "modified",
+          "repeats": 3,
+          "bin_manager_source_sha256": "b4608b17788df0635c05d926e519976b63b361e304cfe3130236cb2ec77f057b",
+          "phases": {
+            "load_tables_and_recorded_quality": {
+              "wall_seconds_median": 2.283472442999937,
+              "wall_seconds_min": 2.1162027469999884,
+              "wall_seconds_max": 2.5874798369995915,
+              "anonymous_rss_peak_bytes_max": 113410048
+            },
+            "full_overlap_graph_only": {
+              "wall_seconds_median": 1.2082942759998332,
+              "wall_seconds_min": 1.1995759890000954,
+              "wall_seconds_max": 1.3989778649997788,
+              "anonymous_rss_peak_bytes_max": 114774016
+            },
+            "read_selected_contig_lengths": {
+              "wall_seconds_median": 3.8440767560000495,
+              "wall_seconds_min": 3.669666510999832,
+              "wall_seconds_max": 4.258875403999809,
+              "anonymous_rss_peak_bytes_max": 123645952
+            },
+            "bounded_candidate_generation": {
+              "wall_seconds_median": 0.2286960880001061,
+              "wall_seconds_min": 0.15717478300030052,
+              "wall_seconds_max": 0.26927457500005403,
+              "anonymous_rss_peak_bytes_max": 123658240
+            }
+          }
+        },
+        {
+          "variant": "unique",
+          "repeats": 3,
+          "bin_manager_source_sha256": "029635d6965c39565d7be5cff6f38c85018927e264ce14f12542a60812de8f5d",
+          "phases": {
+            "load_tables_and_recorded_quality": {
+              "wall_seconds_median": 1.2678715370002465,
+              "wall_seconds_min": 0.8834690349999619,
+              "wall_seconds_max": 1.2942177059999267,
+              "anonymous_rss_peak_bytes_max": 113463296
+            },
+            "full_overlap_graph_only": {
+              "wall_seconds_median": 0.5552791789996263,
+              "wall_seconds_min": 0.5430389329999343,
+              "wall_seconds_max": 0.8674796629998127,
+              "anonymous_rss_peak_bytes_max": 114835456
+            },
+            "read_selected_contig_lengths": {
+              "wall_seconds_median": 1.8068608789999416,
+              "wall_seconds_min": 1.722973459000059,
+              "wall_seconds_max": 1.873782243000278,
+              "anonymous_rss_peak_bytes_max": 123682816
+            },
+            "bounded_candidate_generation": {
+              "wall_seconds_median": 0.06065157000011823,
+              "wall_seconds_min": 0.04718351100018481,
+              "wall_seconds_max": 0.0699735729999702,
+              "anonymous_rss_peak_bytes_max": 123707392
+            }
+          }
+        }
+      ]
+    },
+    {
+      "sample": "cami3_sample_13",
+      "panel": "raw_only",
+      "original_bins": 1103,
+      "graph_edges": 12138,
+      "selected_original_bins": 8,
+      "selected_contigs": 4935,
+      "candidate_count": 68,
+      "fixture_sha256": "c26d9e9b9dfa2df4c5eff2de11f5aed6d4a47a5ccbf504387052b7ce66b48474",
+      "candidate_memberships_sha256": "1bf505da736bf4257637fc40dbb2946bf2889cdfb6932d8509ab7e654371169e",
+      "clique_statistics": {
+        "maximal_cliques": 567689,
+        "size_histogram": {
+          "10": 505,
+          "9": 535049,
+          "8": 27455,
+          "7": 2714,
+          "4": 192,
+          "6": 1213,
+          "5": 523,
+          "3": 35,
+          "2": 3
+        },
+        "subset_visits_before_parent_gates": 276298222,
+        "pair_subset_visits": 20134908,
+        "distinct_pair_subsets": 12138,
+        "repeated_pair_subset_visits": 20122770
+      },
+      "variants": [
+        {
+          "variant": "baseline",
+          "repeats": 3,
+          "bin_manager_source_sha256": "8aacea3ed17716e7f5e08ddc21347c30e243c76baa374cbb99f094cd1adf08b7",
+          "phases": {
+            "load_tables_and_recorded_quality": {
+              "wall_seconds_median": 0.6104531539999698,
+              "wall_seconds_min": 0.548428567999963,
+              "wall_seconds_max": 1.3094429009997839,
+              "anonymous_rss_peak_bytes_max": 90202112
+            },
+            "full_overlap_graph_only": {
+              "wall_seconds_median": 1.1578624449998642,
+              "wall_seconds_min": 0.8105884719998357,
+              "wall_seconds_max": 2.076950449999913,
+              "anonymous_rss_peak_bytes_max": 91684864
+            },
+            "read_selected_contig_lengths": {
+              "wall_seconds_median": 1.6045335339999838,
+              "wall_seconds_min": 1.2119961130001684,
+              "wall_seconds_max": 1.7309986519999256,
+              "anonymous_rss_peak_bytes_max": 95846400
+            },
+            "bounded_candidate_generation": {
+              "wall_seconds_median": 0.013056412999958411,
+              "wall_seconds_min": 0.00726297799974418,
+              "wall_seconds_max": 0.013967174000299565,
+              "anonymous_rss_peak_bytes_max": 95932416
+            }
+          }
+        },
+        {
+          "variant": "modified",
+          "repeats": 3,
+          "bin_manager_source_sha256": "b4608b17788df0635c05d926e519976b63b361e304cfe3130236cb2ec77f057b",
+          "phases": {
+            "load_tables_and_recorded_quality": {
+              "wall_seconds_median": 0.3347309559999303,
+              "wall_seconds_min": 0.31883258900006695,
+              "wall_seconds_max": 0.33502907299998697,
+              "anonymous_rss_peak_bytes_max": 90214400
+            },
+            "full_overlap_graph_only": {
+              "wall_seconds_median": 0.6068018850000954,
+              "wall_seconds_min": 0.5867291310000837,
+              "wall_seconds_max": 0.7010068479999063,
+              "anonymous_rss_peak_bytes_max": 91693056
+            },
+            "read_selected_contig_lengths": {
+              "wall_seconds_median": 1.272129595000024,
+              "wall_seconds_min": 1.1566262260002986,
+              "wall_seconds_max": 1.3212140929999805,
+              "anonymous_rss_peak_bytes_max": 95846400
+            },
+            "bounded_candidate_generation": {
+              "wall_seconds_median": 0.006867455999781669,
+              "wall_seconds_min": 0.006593703999897116,
+              "wall_seconds_max": 0.007099739000295813,
+              "anonymous_rss_peak_bytes_max": 95911936
+            }
+          }
+        },
+        {
+          "variant": "unique",
+          "repeats": 3,
+          "bin_manager_source_sha256": "029635d6965c39565d7be5cff6f38c85018927e264ce14f12542a60812de8f5d",
+          "phases": {
+            "load_tables_and_recorded_quality": {
+              "wall_seconds_median": 0.3107428329999493,
+              "wall_seconds_min": 0.30739883300020665,
+              "wall_seconds_max": 0.35373665399993115,
+              "anonymous_rss_peak_bytes_max": 90169344
+            },
+            "full_overlap_graph_only": {
+              "wall_seconds_median": 0.5416270949999671,
+              "wall_seconds_min": 0.5252203029999691,
+              "wall_seconds_max": 0.7109613249999711,
+              "anonymous_rss_peak_bytes_max": 91648000
+            },
+            "read_selected_contig_lengths": {
+              "wall_seconds_median": 1.133063380999829,
+              "wall_seconds_min": 1.1243414870000379,
+              "wall_seconds_max": 1.2608300259998941,
+              "anonymous_rss_peak_bytes_max": 95813632
+            },
+            "bounded_candidate_generation": {
+              "wall_seconds_median": 0.006333039999844914,
+              "wall_seconds_min": 0.00580590800018399,
+              "wall_seconds_max": 0.006475886000316677,
+              "anonymous_rss_peak_bytes_max": 95883264
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Imported original quality estimates; no new quality inference",
+    "Candidate enumeration limited to declared 8-bin induced subpanels; not full depth",
+    "Non-interleaved descriptive timing under variable laptop load; no speedup inference",
+    "10-ms anonymous-RSS sampling can miss transient peaks",
+    "Source raw reads, BAMs and DIAMOND database were not transferred"
+  ]
+}

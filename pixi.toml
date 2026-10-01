@@ -1,0 +1,24 @@
+[workspace]
+name = "binette-development"
+channels = ["conda-forge", "bioconda"]
+platforms = ["linux-64"]
+
+[dependencies]
+python = "3.12.*"
+checkm2 = "1.1.0.*"
+diamond = "2.1.11.*"
+numpy = ">=1.24,<3"
+pandas = ">=2,<3"
+networkx = ">=3,<4"
+pyfastx = ">=2,<3"
+pyrodigal = ">=3,<3.7"
+pyroaring = ">=1,<2"
+typer = ">=0.9,<1"
+rich = ">=12,<14"
+joblib = ">=1,<2"
+pytest = ">=7,<9"
+ruff = ">=0.1"
+
+[tasks]
+unit = "python -m pytest tests/unit_tests -q"
+equivalence = "python -m pytest tests/integration_tests/optimization_equivalence_test.py -q"

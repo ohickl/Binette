@@ -1,0 +1,164 @@
+{
+  "date": "2026-10-01",
+  "baseline_revision": "4f8791e9b411708b0717dbd8e1296a68ac72ae24",
+  "fork_start_revision": "989088407625ea3dd71036a44cca60929d3de9fc",
+  "scope": "bounded synthetic differential validation; no full-depth benchmark",
+  "python": "3.12.14 (main, Sep  2 2026, 23:27:36) [GCC 15.3.0]",
+  "platform": "Linux-7.2.8-1-t2-noble-x86_64-with-glibc2.39",
+  "parameters": {
+    "PYTHONHASHSEED": "0",
+    "OMP_NUM_THREADS": "1",
+    "real_model_batch_sizes": [
+      1,
+      2,
+      4
+    ],
+    "inference_threads": 1,
+    "metadata_workers": 2,
+    "metadata_max_pending": 4
+  },
+  "packages": [
+    {
+      "name": "checkm2",
+      "version": "1.1.0",
+      "build": "pyh7e72e81_1",
+      "sha256": "a78ac6a8f7067619eaf75713aae2329ebd90bdb0e16826754933714605e9efef"
+    },
+    {
+      "name": "diamond",
+      "version": "2.1.11",
+      "build": "h5ca1c30_2",
+      "sha256": "b7d65cd128a8e51466106131615676ca5ae147c36e5b606d556985d42fae288b"
+    },
+    {
+      "name": "joblib",
+      "version": "1.6.0",
+      "build": "pyhcf101f3_0",
+      "sha256": "96b76ace583404ce4fbc234baa6cdb3de485887913104d4ac51994f9b6656696"
+    },
+    {
+      "name": "keras",
+      "version": "3.11.2",
+      "build": "pyh753f3f9_0",
+      "sha256": "276921e78a021892de887c79034db994ea8d959de57ab88d9ae4865c6aac2d84"
+    },
+    {
+      "name": "lightgbm",
+      "version": "4.7.0",
+      "build": "cpu_py_h6f8b580_8",
+      "sha256": "bdc2975211ed3e11fe11526fbd4c85c061dcdbf3b4a5bf7591cb0446e760052b"
+    },
+    {
+      "name": "networkx",
+      "version": "3.7",
+      "build": "pyhc364b38_0",
+      "sha256": "9458e13767779d5db48c035ba27a1af843fde5187d34c17b60076e18835e8637"
+    },
+    {
+      "name": "numpy",
+      "version": "1.26.4",
+      "build": "py312heda63a1_0",
+      "sha256": "fe3459c75cf84dcef6ef14efcc4adb0ade66038ddd27cadb894f34f4797687d8"
+    },
+    {
+      "name": "pandas",
+      "version": "2.3.3",
+      "build": "py312hf79963d_1",
+      "sha256": "f633d5f9b28e4a8f66a6ec9c89ef1b6743b880b0511330184b4ab9b7e2dda247"
+    },
+    {
+      "name": "pyfastx",
+      "version": "2.3.1",
+      "build": "py312h9639c01_0",
+      "sha256": "0617bf34cd796729fe4be71835926d51140e2ac18679e6e067af9a200554b50a"
+    },
+    {
+      "name": "pyroaring",
+      "version": "1.1.0",
+      "build": "py312ha6a3dbb_0",
+      "sha256": "669b47b34bb4a38e75b74fe5a0df68213bdebeffc9168c7a7409b75e3e27a195"
+    },
+    {
+      "name": "pyrodigal",
+      "version": "3.6.3.post1",
+      "build": "py312h0fa9677_1",
+      "sha256": "fed8b1c15ebe4b6e1dd3afdaa71bff03f928257ae0e1bed1ebb5efb327c28dc1"
+    },
+    {
+      "name": "pytest",
+      "version": "8.4.2",
+      "build": "pyhcf101f3_1",
+      "sha256": "39f41a52eb6f927caf5cd42a2ff98a09bb850ce9758b432869374b6253826962"
+    },
+    {
+      "name": "python",
+      "version": "3.12.14",
+      "build": "h5f976f7_3_cpython",
+      "sha256": "14c579b1016da04e4c9f1c5c857272d83ec447317d8c4074a07d59de3cef70ef"
+    },
+    {
+      "name": "scikit-learn",
+      "version": "1.6.1",
+      "build": "py312h7a48858_0",
+      "sha256": "7c869c73c95ef09edef839448ae3d153c4e3a208fb110c4260225f342d23e08e"
+    },
+    {
+      "name": "tensorflow",
+      "version": "2.17.0",
+      "build": "cpu_py312h69ecde4_3",
+      "sha256": "6d446483bacadda5db371bb60cc3e5de815c1fb927ac5116cac625ccd10d5835"
+    },
+    {
+      "name": "tensorflow-base",
+      "version": "2.17.0",
+      "build": "cpu_py312h4c54302_3",
+      "sha256": "1c84f42a2da7a5b7eb78cb9895299cf492deccafce5c6e8c7dc2028112e2ec3e"
+    }
+  ],
+  "source_and_fixture_definition_sha256": {
+    "pixi.lock": "b6181457ba4cd0a2168d15d955fb130f31967be118ef7da7fbbac80d39555557",
+    "binette/bin_manager.py": "b4608b17788df0635c05d926e519976b63b361e304cfe3130236cb2ec77f057b",
+    "binette/bin_quality.py": "a5367211b62a3dbaab977a31097593bc4d5eea100dda2d27a2c0015e7db0351c",
+    "binette/cds.py": "a04531b8b46e1295b1f999d42f0ac9d8f6ad14287c30405e5a639c65f84c697e",
+    "tests/unit_tests/optimization_test.py": "2033758ca2f6d64ac6f4e809f035f452d33751b4c6309b8bf561cb70e8195154",
+    "tests/integration_tests/optimization_equivalence_test.py": "5ee792fc409c5574b396bb32f57b1fb235d1b99273d4cd5921217bca7aae6d82"
+  },
+  "checkm2_resources_sha256": {
+    "feature_ordering.json": "f364e2c723c41e879a4212694e88a95b3d1a20534835d9892d96eafd7a070a74",
+    "kegg_path_category_mapping.json": "f0543e4d82d81ab7d7226407139fcbaf878508e883fa5bb2345e256ce20a725f",
+    "module_definitions.json": "69dc018f3c833fc8e241b9f0753bba55d31bffab5aecae0840e23173a39a35f5",
+    "general_model_COMP.gbm": "f335f1d8c3587aa2abe91ad39ba2a60854901ab5d561d6a46878b68a8598023f",
+    "specific_model_COMP.keras": "6560c577569639dbf6a878184db9551b40ed36d39027a44dd41f08a51130738e",
+    "model_CONT.gbm": "d3ab26b7a8c20a942aa9ef3c8f4b5d77eb985a704526aef3aacb63f8f7764bda",
+    "scaler.sav": "771dc55cabab5fca287431b0467cfaccaf4182eb5adf28cad9bed10490d08a4a",
+    "min_ref_rsdata_v1.npz": "f1ec6afac0b2224d1192179595fe49dbfb6fa5e41c79104f8ea4fca7b65f7d5a",
+    "cosine_table.pkl": "59dbab8b39d328436ecaf5d7f24b2a456a11467511ae6555ceb021408fffd138"
+  },
+  "validation": {
+    "upstream_unit_tests": {
+      "passed": 107
+    },
+    "new_controls_before_changes": "provenance and processor reuse failed; bounded pool control failed; overlap oracle passed; N50 xfailed",
+    "modified_unit_tests": {
+      "passed": 115,
+      "xfailed": 1,
+      "reason": "known exact-half N50 defect"
+    },
+    "real_model_differential": {
+      "passed": 4,
+      "raw_prediction_tolerance": 0,
+      "scaled_feature_tolerance": 0,
+      "rounded_scores_and_model_choices": "identical",
+      "candidate_memberships_and_selected_bins": "identical on declared fixture"
+    },
+    "lint": "passed",
+    "whitespace": "passed"
+  },
+  "limitations": [
+    "No curated CAMI sequencing fixture transferred",
+    "No DIAMOND search or full CLI run",
+    "No full-depth memory or walltime benchmark",
+    "No real multiprocess CheckM2 differential test",
+    "No CRG integration or microvalidation gate"
+  ]
+}

@@ -153,12 +153,6 @@ def get_diamond_feature_per_bin_df(
     defaultKOs = KeggCalc.return_default_values_from_category("KO_Genes")
     bin_keys = [b.contigs_key for b in bins]
 
-    # --- Build contig → bins mapping ---
-    contig_to_bins = defaultdict(list)
-    for b in bins:
-        for c in b.contigs:
-            contig_to_bins[c].append(b.contigs_key)
-
     # --- Aggregate KO counters per bin ---
     bin_to_ko_counter = {}
     for bin_obj in bins:
@@ -555,11 +549,19 @@ def assess_bins_quality(
     :param threads: Number of threads for parallel processing (default is 1).
     :param checkm2_batch_size: Maximum number of bins to process in a single CheckM2 call.
     """
+    bins_list = list(bins)
+
+    if not bins_list:
+        return []
+    if checkm2_batch_size <= 0:
+        raise ValueError("checkm2_batch_size must be positive")
+
     if postProcessor is None:
         modelPostprocessing = get_modelPostprocessing()
         postProcessor = modelPostprocessing.modelProcessor(threads)
 
-    bins_list = list(bins)
+    # Prediction models are immutable between batches; load once per scoring call.
+    modelProc = get_modelProcessing().modelProcessor(threads)
 
     # If we have fewer bins than the batch size, process them all at once
     if len(bins_list) <= checkm2_batch_size:
@@ -572,6 +574,7 @@ def assess_bins_quality(
             contamination_weight,
             postProcessor,
             threads,
+            modelProc=modelProc,
         )
 
     # Split bins into smaller batches for memory management
@@ -580,11 +583,10 @@ def assess_bins_quality(
     )
 
     all_processed_bins = []
-    batch_chunks = list(chunks(bins_list, checkm2_batch_size))
-
-    for i, batch_bins in enumerate(batch_chunks):
+    n_batches = (len(bins_list) + checkm2_batch_size - 1) // checkm2_batch_size
+    for i, batch_bins in enumerate(chunks(bins_list, checkm2_batch_size)):
         logger.debug(
-            f"Processing CheckM2 batch {i + 1}/{len(batch_chunks)} with {len(batch_bins)} bins"
+            f"Processing CheckM2 batch {i + 1}/{n_batches} with {len(batch_bins)} bins"
         )
 
         # Process this batch
@@ -597,6 +599,7 @@ def assess_bins_quality(
             contamination_weight,
             postProcessor,
             threads,
+            modelProc=modelProc,
         )
 
         all_processed_bins.extend(processed_batch)
@@ -616,6 +619,7 @@ def _assess_bins_quality_batch(
     contamination_weight: float,
     postProcessor,
     threads: int,
+    modelProc=None,
 ):
     """
     Assess the quality of a batch of bins (internal function).
@@ -640,8 +644,8 @@ def _assess_bins_quality_batch(
     bin_name_to_bin = {bin_obj.contigs_key: bin_obj for bin_obj in bins}
 
     # 4: Call general model & specific models and derive predictions"""
-    modelProcessing = get_modelProcessing()
-    modelProc = modelProcessing.modelProcessor(threads)
+    if modelProc is None:
+        modelProc = get_modelProcessing().modelProcessor(threads)
 
     vector_array = feature_vectors.iloc[:, 1:].values.astype(float)
 
