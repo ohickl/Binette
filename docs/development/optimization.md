@@ -433,3 +433,69 @@ sample-13 main panel, verify the complete source and a fresh cold restore,
 then proceed with the larger comparison. No full nf-imp3 suite, push, production
 deployment or cleanup was performed. N50 and the Pyfastx custom-index issue
 remain separately qualified work.
+
+## CPU accounting and extended scaling — 2026-10-02
+
+Live Slurm accounting counts each top-level job once; batch/extern rows are
+not added again. Whole-job utilization is TotalCPU/(ElapsedRaw*AllocCPUS).
+
+| Scoring owners | Allocated CPUs | Average active CPUs | Allocation utilization | User CPU | System CPU |
+| --- | --- | --- | --- | --- | --- |
+| 6 | 16 | 5.67 | 35.46% | 10h23m13s | 10h31m53s |
+| 12 | 16 | 9.97 | 62.29% | 10h33m58s | 8h13m20s |
+| 16 | 16 | 10.84 | 67.72% | 10h32m50s | 1h37m40s |
+
+These were separate jobs holding 16 CPUs to isolate scoring owner count while
+keeping gene/DIAMOND threads fixed. Lower-owner scoring reserved idle CPUs;
+these are not optimally sized six/twelve-CPU whole jobs. Similar user CPU but
+large kernel-time differences show that the full twelve-to-sixteen wall gain
+cannot be assigned to parallelism alone. Current node snapshots do not recover
+historical contention. Per-event `smaps_rollup` reads are a profiling-overhead
+hypothesis now under a same-node ABBA test. Whole-job averages include serial
+phases and do not establish steady scoring saturation.
+
+The profiling harness now accepts `--threads` and `--no-scoring-telemetry`,
+records the telemetry mode in its recovery identity, and records phase user/
+system CPU from the parent plus reaped descendants. Numerical fork code and
+the sixteen-owner default are unchanged. Ruff, compile and whitespace passed.
+Source manifest `f0122735e5082e6d3f8dff96588a47706f71595e096bfa8a1b60b5c26171b562`.
+Paired gate `29197465 COMPLETED 0:0 00:02:31` passed the same 16,427 pairs,
+12 graph oracles, actual nonempty inference and complete/partial recovery.
+Telemetry-disabled microgate `29198040 COMPLETED 0:0 00:00:55` independently
+verified exact baseline outputs and phase CPU fields using the same paired
+fixture. Source/gate/CPU/launch receipts are curated here.
+
+Controlled probe `29197858` is active on `genoa64-05`: fixed 65,536 candidates,
+telemetry on/off ABBA at sixteen, then symmetric sixteen/twenty/twenty-four
+repeats, exact scores/models checked. Its single 24-CPU allocation is a short
+controlled experiment, not whole-job CPU sizing. Sequential full trials on
+that same node request CPUs matching all stages and model owner counts:
+`29198299` (16), `29198313` (20), `29198318` (24). They use fresh separate
+stores, no per-event memory telemetry, low-frequency anonymous-RSS sampling,
+phase CPU accounting and final baseline comparisons. A failed predecessor
+blocks later trials. Root:
+`/no_backup/abaud/data/secondary/rat_mag_catalog/analysis/nf-imp3_tests/binette_optimization/scaling_20261002_f0122735e508`.
+
+The earlier full timing results remain valid for their instrumented runs;
+production runtime and an owner-count optimum await this less-intrusive
+comparison. Do not change production/defaults from provisional subset results.
+
+## Profiling overhead confirmed in the controlled subset — 2026-10-02
+
+The controlled probe `29197858 COMPLETED 0:0 00:09:13` passed exact scores/
+models for every run. Telemetry ABBA median was 75.348 s on versus 49.744 s
+off (51.5% added wall time; disabling it cut measured time by 34.0%). Median
+system CPU was 248.161 versus 116.334 s. The profiler therefore materially
+distorts timing; it does not change numerical outputs. These subset results
+do not reconstruct the historical full-run overhead on other nodes.
+
+Telemetry-off medians at 16/20/24 were 49.562/42.689/40.437 s; twenty to
+twenty-four saved only 5.28% subset time. Individual sixteen-owner off runs
+44.379-49.927 s, twenty 40.494-44.885 s, twenty-four 38.444-42.429 s.
+Average active CPUs in this phase (startup/mmap included) were 13.62-14.16,
+15.68-18.25, and 19.79-20.96, respectively. These are repeated fixed-subset
+observations with warming/time variation, not steady-state full-scoring
+saturation. New full sixteen-owner `29198299` is running; twenty `29198313`
+and twenty-four `29198318` wait on predecessors. Full matched-allocation
+results and phase CPU utilization remain pending. Receipt:
+`crg_controlled_owner_probe_2026-10-02.json` in fork development documentation.

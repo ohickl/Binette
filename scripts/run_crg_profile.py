@@ -152,7 +152,10 @@ def process_tree_rss(pid):
     return anonymous, len(seen)
 
 
-def run(bundle, root, variant, assembly, tables, database, threads, quality_workers=None):
+def run(
+    bundle, root, variant, assembly, tables, database, threads,
+    quality_workers=None, scoring_telemetry=True,
+):
     target = root / variant
     target.mkdir(exist_ok=True)
     env = dict(
@@ -189,13 +192,17 @@ def run(bundle, root, variant, assembly, tables, database, threads, quality_work
         if quality_workers is not None:
             command.extend(["--quality-workers", str(quality_workers)])
         command.extend(["--score-cache", str(target / "score_shards")])
-        env["BINETTE_SCORING_TELEMETRY"] = str(target / "scoring.jsonl")
+        if scoring_telemetry:
+            env["BINETTE_SCORING_TELEMETRY"] = str(target / "scoring.jsonl")
+        else:
+            env.pop("BINETTE_SCORING_TELEMETRY", None)
     contract = {
         "argv": command,
         "source": env["BINETTE_PROFILE_SOURCE"],
         "threads": threads,
         "hashseed": 0,
         "thread_limits": 1,
+        "scoring_telemetry": scoring_telemetry,
         "sources_sha256": sha256(bundle / "sources.json"),
         "inputs_sha256": sha256(root / "inputs.json"),
     }
@@ -346,7 +353,14 @@ def main():
     parser.add_argument("--micro-assembly", type=Path)
     parser.add_argument("--recover", action="store_true")
     parser.add_argument("--quality-workers", type=int)
+    parser.add_argument("--threads", type=int, default=16)
+    parser.add_argument("--no-scoring-telemetry", action="store_true")
     args = parser.parse_args()
+    if args.threads <= 0 or (
+        args.quality_workers is not None
+        and not 1 <= args.quality_workers <= args.threads
+    ):
+        parser.error("Workers must be positive and fit within --threads")
     args.root.mkdir(parents=True, exist_ok=args.recover)
     sys.path.insert(0, str(args.bundle / "modified"))
     if args.variant == "gate":
@@ -404,8 +418,9 @@ def main():
                     assembly,
                     tables,
                     args.database,
-                    16,
+                    args.threads,
                     args.quality_workers,
+                    not args.no_scoring_telemetry,
                 )
             ),
             flush=True,

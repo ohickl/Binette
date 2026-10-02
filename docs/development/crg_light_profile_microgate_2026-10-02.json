@@ -1,0 +1,18 @@
+{
+  "bundle_manifest_sha256": "f0122735e5082e6d3f8dff96588a47706f71595e096bfa8a1b60b5c26171b562",
+  "exact_baseline_outputs": true,
+  "pairs": 16427,
+  "phase_cpu_fields_verified": true,
+  "probe_sha256": "8045abcf6edbb29b2abeada8c5df26007cfd3db37b30aac6dedaefc0cf16ae4c",
+  "run": {
+    "exit_code": 0,
+    "memory_limitations": "Summed process RssAnon may count shared anonymous pages repeatedly; one-second samples can miss short peaks",
+    "schema": "binette-cli-profile-v1",
+    "summed_process_tree_rssanon_peak_bytes": 5028335616,
+    "variant": "modified",
+    "wall_seconds": 50.025355259887874
+  },
+  "schema": "binette-light-profile-microgate-v1",
+  "telemetry_disabled": true,
+  "verdict": "PASS"
+}

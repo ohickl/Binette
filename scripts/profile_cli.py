@@ -12,6 +12,7 @@ import importlib.metadata
 import json
 import os
 import pickle
+import resource
 import sys
 import time
 from pathlib import Path
@@ -21,6 +22,13 @@ from binette import bin_manager, bin_quality, cds  # noqa: E402
 from binette import main as cli  # noqa: E402
 
 RECEIPT = Path(os.environ["BINETTE_PROFILE_RECEIPT"])
+
+
+def cpu_usage():
+    own = resource.getrusage(resource.RUSAGE_SELF)
+    children = resource.getrusage(resource.RUSAGE_CHILDREN)
+    # Descendant CPU is available here after each phase joins its workers.
+    return own.ru_utime + children.ru_utime, own.ru_stime + children.ru_stime
 
 
 def emit(record):
@@ -39,6 +47,7 @@ def instrument(module, name):
         nonlocal calls
         calls += 1
         start = time.monotonic()
+        cpu_before = cpu_usage()
         emit({"event": "start", "phase": name, "monotonic": start})
         # A cache belongs to one immutable source/input/parameter namespace.
         # In-place operations cannot be restored by replacing a return value.
@@ -71,12 +80,15 @@ def instrument(module, name):
                 result = targets
         else:
             result = original(*args, **kwargs)
+        cpu_after = cpu_usage()
         emit(
             {
                 "event": "end",
                 "phase": name,
                 "wall_seconds": time.monotonic() - start,
                 "restored": restored,
+                "cpu_user_seconds": cpu_after[0] - cpu_before[0],
+                "cpu_system_seconds": cpu_after[1] - cpu_before[1],
             }
         )
         if cacheable and not restored:

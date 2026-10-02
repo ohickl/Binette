@@ -1,0 +1,32 @@
+{
+  "bundle": "/no_backup/abaud/data/secondary/rat_mag_catalog/analysis/nf-imp3_tests/binette_optimization/scaling_20261002_f0122735e508",
+  "diagnostics_sha256": {
+    "binette_controlled_scaling_probe.py": "3b540f0f2f469da84efd7c34e4dff6dfeffc570d70bf7960de0b2e75d9bc84c1",
+    "binette_controlled_scaling_run.sh": "913d8f0813d492e13ca209daa4b67ebc7c7786a30a0a45397f3d2a7850b8f791",
+    "binette_light_profile_gate.py": "8045abcf6edbb29b2abeada8c5df26007cfd3db37b30aac6dedaefc0cf16ae4c"
+  },
+  "full_runs": [
+    {
+      "allocated_cpus": 16,
+      "job": 29198299,
+      "owners": 16
+    },
+    {
+      "allocated_cpus": 20,
+      "job": 29198313,
+      "owners": 20
+    },
+    {
+      "allocated_cpus": 24,
+      "job": 29198318,
+      "owners": 24
+    }
+  ],
+  "light_profile_gate": 29198040,
+  "node": "genoa64-05",
+  "note": "Full runs sequential on same shared node, telemetry disabled, phase user/system CPU recorded, fresh stage/cache roots; final comparisons pending",
+  "paired_gate": 29197465,
+  "probe": 29197858,
+  "schema": "binette-controlled-scaling-launch-v1",
+  "source_manifest_sha256": "f0122735e5082e6d3f8dff96588a47706f71595e096bfa8a1b60b5c26171b562"
+}

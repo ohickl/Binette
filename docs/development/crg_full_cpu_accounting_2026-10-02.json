@@ -1,0 +1,53 @@
+{
+  "findings": [
+    "User CPU demand is similar across counts; system CPU differs greatly",
+    "Whole-job utilization includes serial stages and is not scoring-phase saturation",
+    "Per-batch smaps_rollup profiling is a hypothesis for part of the overhead, not a proven cause",
+    "Current node load and free memory are snapshots, not reconstructed historical conditions"
+  ],
+  "jobs": [
+    {
+      "allocated_cpu_seconds": 212400,
+      "allocated_cpu_utilization": 0.3545527306967985,
+      "allocated_cpus": 16,
+      "average_active_cpus": 5.672843691148776,
+      "elapsed_seconds": 13275,
+      "job": 29187859,
+      "node": "genoa64-06",
+      "scoring_workers": 6,
+      "system_cpu_seconds": 37913,
+      "total_cpu_seconds": 75307,
+      "user_cpu_seconds": 37393
+    },
+    {
+      "allocated_cpu_seconds": 108592,
+      "allocated_cpu_utilization": 0.6228727714748784,
+      "allocated_cpus": 16,
+      "average_active_cpus": 9.965964343598054,
+      "elapsed_seconds": 6787,
+      "job": 29187860,
+      "node": "genoa64-07",
+      "scoring_workers": 12,
+      "system_cpu_seconds": 29600,
+      "total_cpu_seconds": 67639,
+      "user_cpu_seconds": 38038
+    },
+    {
+      "allocated_cpu_seconds": 64720,
+      "allocated_cpu_utilization": 0.6772404202719406,
+      "allocated_cpus": 16,
+      "average_active_cpus": 10.83584672435105,
+      "elapsed_seconds": 4045,
+      "job": 29187776,
+      "node": "genoa64-05",
+      "scoring_workers": 16,
+      "system_cpu_seconds": 5860,
+      "total_cpu_seconds": 43831,
+      "user_cpu_seconds": 37970
+    }
+  ],
+  "next_experiment": "Same-node telemetry ABBA and symmetric 16/20/24-owner subset; full jobs with matched 16/20/24 CPU requests and phase CPU accounting",
+  "schema": "binette-slurm-cpu-accounting-v1",
+  "scope": "Whole completed jobs; one top-level row per job, batch/extern rows not added again",
+  "source": "Live sacct JobID,ElapsedRaw,AllocCPUS,TotalCPU,UserCPU,SystemCPU,CPUTimeRAW,NodeList on 2026-10-02"
+}
