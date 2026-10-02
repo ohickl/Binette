@@ -1,0 +1,26 @@
+{
+  "allocated_cpus": 16,
+  "allocation_utilization": 0.9152542372881356,
+  "average_active_cpus": 14.64406779661017,
+  "cpu_seconds": 864,
+  "elapsed_seconds": 59,
+  "job": 29198299,
+  "limitations": [
+    "Short live window with Slurm accounting refresh/rounding; approximate",
+    "CPU time includes kernel work; final phase user/system CPU will separate it",
+    "One scoring interval, not whole-job or all worker-count saturation"
+  ],
+  "phase": "intermediate add_bin_metrics active",
+  "samples": [
+    {
+      "cumulative_cpu_seconds": 14588,
+      "utc": "2026-10-02 11:16:00 UTC"
+    },
+    {
+      "cumulative_cpu_seconds": 15452,
+      "utc": "2026-10-02 11:16:59 UTC"
+    }
+  ],
+  "schema": "binette-live-scoring-cpu-window-v1",
+  "source": "sstat AveCPU for the single batch task; two live samples"
+}

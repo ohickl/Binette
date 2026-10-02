@@ -499,3 +499,48 @@ saturation. New full sixteen-owner `29198299` is running; twenty `29198313`
 and twenty-four `29198318` wait on predecessors. Full matched-allocation
 results and phase CPU utilization remain pending. Receipt:
 `crg_controlled_owner_probe_2026-10-02.json` in fork development documentation.
+
+## 2026-10-02 — matched sixteen-CPU full trial passes; larger trials queued
+
+`29198299 COMPLETED 0:0 01:17:11`, CLI 4,618.389 s, anonymous peak
+27,992,698,880 bytes (26.07 GiB); exact final scientific metrics/memberships
+26 bins/5,053 contigs and 6,945,894 candidate fingerprint PASS. Whole-job
+utilization 80.54%; intermediate scoring 3,911.223 s, 92.07% CPU utilization
+including kernel time (user/system 36,742.984/20,874.905 CPU seconds).
+Per-event telemetry is disabled, but substantial system CPU persists and
+this full run is slower than the earlier instrumented 1h07m trial. Shared-node
+variation still prevents a simple profiler correction of historical timings.
+`29198313` (20 CPUs/owners) is PENDING Priority; `29198318` (24) depends on it.
+Same-node sequential allocation remains intact. No default change from partial
+results. Receipt `crg_matched_full_w16_2026-10-02.json` in fork development docs.
+
+
+## 2026-10-02 — matched 16/20/24 full trials complete; twenty best observed
+
+All three full jobs completed `0:0` and passed exact final memberships and
+scientific metrics (26 bins/5,053 contigs, SHA
+`68f8457051684c8baf9a4300bb54db8dfbc12717aabe725459a72d8499f472d2`),
+plus all 6,945,894 candidate fingerprints. Same shared node `genoa64-05`,
+sequential fresh stores, matching CPUs/workers, no per-event memory telemetry:
+
+| CPUs/workers | Job | Slurm elapsed | Peak summed anonymous RSS | Whole-job CPU utilization | Scoring CPU utilization | Allocated CPU hours |
+| --- | --- | --- | --- | --- | --- | --- |
+| 16 | 29198299 | 1h17m11s | 26.07 GiB | 80.54% | 92.07% | 20.58 |
+| 20 | 29198313 | 47m58s | 29.06 GiB | 68.06% | 85.26% | 15.99 |
+| 24 | 29198318 | 54m36s | 32.47 GiB | 72.58% | 89.90% | 21.84 |
+
+Twenty is the best observed speed/resource combination; twenty-four took
+13.8% longer and used 11.7% more anonymous memory. Whole-job system CPU
+was 5h49m04s / 17m20.937s / 4h54m00s at 16/20/24. Scoring user-only
+CPU utilization was 58.71% / 83.01% / 61.17%; a high busy-CPU percentage
+includes substantial kernel overhead in sixteen/twenty-four. One full run per
+count on a shared node cannot establish a universal optimum or isolate a
+worker-count cause for that overhead. The controlled subset corroborates
+limited 20-to-24 gains, but does not eliminate full-run environmental effects.
+
+Use explicit `--threads 20 --quality-workers 20` for the observed configuration.
+The automatic default remains capped at sixteen; a default change requires
+its own policy microgate. Production integration is still outstanding. No
+remaining jobs in this three-job series; retain all stores and diagnostics.
+Receipts: `crg_matched_full_w{16,20,24}_2026-10-02.json` and
+`crg_matched_owner_summary_2026-10-02.json` in fork development docs.
