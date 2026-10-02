@@ -306,8 +306,8 @@ Source manifest `80d805cd9e9daff8215a2345cd248c923cd306106723498703a454e6cdae715
 receipts `crg_decision_sources_2026-10-02.json` and
 `crg_decision_microgate_2026-10-02.json`.
 Full follow-up `29187776` uses sixteen model owners on 16 CPUs/96G/12h;
-comparator `29187779` reuses the completed baseline. Both new full timing/
-memory and exact output equivalence remain pending. Isolated root:
+comparator `29187779` reuses the completed baseline. The sixteen-owner result is qualified below; six/twelve full timing/memory
+and exact output comparisons remain pending. Isolated root:
 `/no_backup/abaud/data/secondary/rat_mag_catalog/analysis/nf-imp3_tests/binette_optimization/profile3_20261002_80d805cd9e9d`.
 The CLI's conservative default remains at most four; this experiment explicitly
 selects sixteen. Choose a default only after full-run performance qualification.
@@ -340,3 +340,14 @@ their source/gate links share the qualified immutable snapshot and their
 outputs/stores are separate. All allocations are 16CPU/96G/12h; the owner
 count differs. Full timings, exact output equivalence and memory decide the
 worker default. Receipt: `crg_owner_scaling_probe_2026-10-02.json`.
+
+## Sixteen-owner full result — 2026-10-02
+
+The sixteen-owner full trial `29187776 COMPLETED 0:0 01:07:25`, comparator
+`29187779` PASS, now demonstrates exact final memberships/scientific metrics
+and faster runtime than the previous improved fork: 1h07m25s versus 1h30m58s.
+Peak summed anonymous RSS is 27,834,126,336 bytes (25.92 GiB) versus 48.52
+GiB; runtime is 25.9% lower and memory 46.6% lower in these single runs.
+Instrumented CLI wall 4,039.585 s; checkpoint/fingerprint-adjusted wall
+3,894.635 s; scoring 3,360.181 s. Six/twelve trials and owner choice remain
+pending. Receipt `crg_decision_full_w16_2026-10-02.json` in fork development docs.
