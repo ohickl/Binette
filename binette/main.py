@@ -574,7 +574,7 @@ def binette(
         int | None,
         typer.Option(
             "--quality-workers",
-            help="Persistent CheckM2 model owners; default at most four, bounded by --threads.",
+            help="Persistent CheckM2 model owners; default at most sixteen, bounded by --threads; small workloads use one.",
             rich_help_panel="Advanced Options",
         ),
     ] = None,

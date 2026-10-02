@@ -1,0 +1,43 @@
+{
+  "job": "29188358",
+  "phases": {
+    "cosine_rows": {
+      "bins": 6946997,
+      "events": 27850,
+      "needed": 3947542,
+      "seconds": 0.0
+    },
+    "features": {
+      "bins": 6946997,
+      "events": 27850,
+      "needed": 0,
+      "seconds": 2394.1642301147804
+    },
+    "general": {
+      "bins": 0,
+      "events": 27850,
+      "needed": 0,
+      "seconds": 883.4362315628678
+    },
+    "postprocessing": {
+      "bins": 0,
+      "events": 27850,
+      "needed": 0,
+      "seconds": 21688.59531665407
+    },
+    "specific": {
+      "bins": 0,
+      "events": 27850,
+      "needed": 0,
+      "seconds": 20856.34638941381
+    },
+    "worker_initialized": {
+      "bins": 0,
+      "events": 19,
+      "needed": 0,
+      "seconds": 0.0
+    }
+  },
+  "schema": "binette-terminal-worker-phases-v1",
+  "scope": "All scoring calls including original bins; worker seconds are parallel sums, not job elapsed time"
+}

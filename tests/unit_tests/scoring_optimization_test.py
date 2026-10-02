@@ -289,9 +289,11 @@ def test_protein_summary_preserves_written_sequences_and_metadata(tmp_path):
 
     sequences = [("contig_one", "ATG" + "GCT" * 600 + "TAA"), ("no_gene", "N" * 100)]
     first, second = tmp_path / "legacy.faa.gz", tmp_path / "summary.faa.gz"
-    proteins, coding = cds.predict(iter(sequences), str(first), threads=2)
+    # Pyrodigal's internal sequence IDs depend on thread scheduling.
+    # One worker makes headers comparable across these two independent runs.
+    proteins, coding = cds.predict(iter(sequences), str(first), threads=1)
     summaries, compact_coding = cds.predict(
-        iter(sequences), str(second), threads=2, summarize=True
+        iter(sequences), str(second), threads=1, summarize=True
     )
     assert coding == compact_coding
     assert gzip.decompress(first.read_bytes()) == gzip.decompress(second.read_bytes())

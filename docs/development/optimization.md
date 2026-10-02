@@ -187,7 +187,8 @@ memberships (a single larger bin remains intact). No assembly-wide dictionary
 scan or pandas feature round trip occurs per numerical batch.
 
 One model pair lives per persistent spawn worker, with default ownership capped
-at four and an explicit `--quality-workers` override bounded by `--threads`.
+at sixteen and an explicit `--quality-workers` override bounded by `--threads`.
+The initial four-owner default was superseded after full performance qualification.
 Small default workloads use one owner. Evidence/reference arrays are read-only
 mmap shared files in task-local temporary storage. Queued tasks are capped at
 twice the owner count; results contain only completeness, contamination and a
@@ -351,3 +352,38 @@ GiB; runtime is 25.9% lower and memory 46.6% lower in these single runs.
 Instrumented CLI wall 4,039.585 s; checkpoint/fingerprint-adjusted wall
 3,894.635 s; scoring 3,360.181 s. Six/twelve trials and owner choice remain
 pending. Receipt `crg_decision_full_w16_2026-10-02.json` in fork development docs.
+
+## Qualified worker default — 2026-10-02
+
+The previous pending worker-choice statements above are superseded: sixteen is
+now the default maximum for large workloads, capped by `--threads`; small
+workloads still use one owner. Explicit lower owner counts remain available.
+Full twelve-owner `29187860 COMPLETED 0:0 01:53:07`, comparator `29187863`
+PASS, used 22.85 GiB summed anonymous RSS (24,535,097,344 bytes), CLI
+6,781.732 s and scoring 6,080.815 s. Its exact final metrics and memberships
+agree with the baseline and sixteen-owner run. The six-owner run is still
+active and has already exceeded the prior improved runtime. Sixteen is the
+only completed new configuration meeting the faster-than-prior runtime target.
+All full trials allocated 16 CPUs/96G/12h; these compare scoring owner counts,
+not whole-job CPU allocations. Different shared nodes and one execution per
+count confound a precise causal speedup estimate. The fixed-allocation subset
+curve remains the controlled evidence of diminishing scaling efficiency.
+
+The final policy snapshot changes only worker selection, CLI help and harness
+handling of a missing override; numerical scoring/features/selection are the
+same as the full trials. Manifest SHA
+`b7af49af645831ea7312b55e19d413b6116b5cfa9a6ea9a8b2d5125cd487d6e6`.
+Gate `29188848 COMPLETED 0:0 00:02:40` runs the CLI default rather than forcing
+a worker count, plus explicit nonempty multiprocess and recovery controls:
+
+```text
+binette-isolated-microgate-v2 pairs=16427 variants=2 graph_oracles=12 numeric_bins=8 workers=2 complete_restore=PASS partial_restore=PASS failed=0
+```
+
+Forty scoring/equivalence controls and nineteen CDS controls passed, including
+multithread prediction; Ruff and whitespace passed. The FAA byte-comparison
+control uses one worker because Pyrodigal internal header IDs depend on thread
+scheduling across separate predictions. Predicted sequences, metadata and
+byte equality remain checked; production prediction code is unchanged.
+Policy source/gate and full twelve-owner receipts are curated here. No
+production deployment, source-panel/cold-restore qualification or cleanup.

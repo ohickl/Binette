@@ -1,0 +1,160 @@
+{
+  "baseline_root": "/no_backup/abaud/data/secondary/rat_mag_catalog/analysis/nf-imp3_tests/binette_optimization/profile_20261001_86e515d72d97",
+  "candidate_fingerprint_equal": true,
+  "candidate_fingerprint_method": "count plus order-independent modular sum of SHA-256 digests of serialized memberships; probabilistic integrity comparison",
+  "candidates": 6945894,
+  "final_bins": 26,
+  "final_contigs": 5053,
+  "final_memberships_exactly_equal": true,
+  "final_memberships_sha256": "68f8457051684c8baf9a4300bb54db8dfbc12717aabe725459a72d8499f472d2",
+  "final_scientific_metrics_exactly_equal": true,
+  "limitations": [
+    "One run per version; no replicated speedup or scaling estimate",
+    "Shared node and storage contention may affect timing",
+    "Summed anonymous RSS may double-count shared anonymous pages",
+    "Historical production output can differ through hash-seed-dependent tie ordering",
+    "Checkpoint and fingerprint instrumentation overhead is measured separately"
+  ],
+  "measurements": {
+    "baseline": {
+      "candidate_fingerprint_seconds": 5.921683586202562,
+      "checkpoint_seconds": 148.11452210042626,
+      "exit_code": 0,
+      "instrumented_wall_minus_checkpoint_and_fingerprint_seconds": 8557.54413864296,
+      "memory_limitations": "Summed process RssAnon may count shared anonymous pages repeatedly; one-second samples can miss short peaks",
+      "phases": [
+        {
+          "event": "end",
+          "phase": "parse_input_files",
+          "restored": false,
+          "wall_seconds": 0.1573557760566473
+        },
+        {
+          "event": "end",
+          "phase": "manage_protein_alignement",
+          "restored": false,
+          "wall_seconds": 146.10433733463287
+        },
+        {
+          "event": "end",
+          "phase": "get_contig_cds_metadata",
+          "restored": false,
+          "wall_seconds": 1.9857564317062497
+        },
+        {
+          "event": "end",
+          "phase": "add_bin_metrics",
+          "restored": false,
+          "wall_seconds": 16.828512532636523
+        },
+        {
+          "event": "end",
+          "phase": "add_bin_size_and_N50",
+          "restored": false,
+          "wall_seconds": 0.019129622727632523
+        },
+        {
+          "event": "end",
+          "phase": "create_intermediate_bins",
+          "restored": false,
+          "wall_seconds": 3487.4682446112856
+        },
+        {
+          "event": "end",
+          "phase": "add_bin_metrics",
+          "restored": false,
+          "wall_seconds": 4659.662592918612
+        },
+        {
+          "event": "end",
+          "phase": "add_bin_size_and_N50",
+          "restored": false,
+          "wall_seconds": 181.5456775892526
+        },
+        {
+          "event": "end",
+          "phase": "select_best_bins",
+          "restored": false,
+          "wall_seconds": 39.25778241548687
+        }
+      ],
+      "schema": "binette-cli-profile-v1",
+      "summed_process_tree_rssanon_peak_bytes": 53751177216,
+      "variant": "baseline",
+      "wall_seconds": 8711.580344329588
+    },
+    "modified": {
+      "candidate_fingerprint_seconds": 5.936750930733979,
+      "checkpoint_seconds": 142.847136227414,
+      "exit_code": 0,
+      "instrumented_wall_minus_checkpoint_and_fingerprint_seconds": 6632.948023254983,
+      "memory_limitations": "Summed process RssAnon may count shared anonymous pages repeatedly; one-second samples can miss short peaks",
+      "phases": [
+        {
+          "event": "end",
+          "phase": "parse_input_files",
+          "restored": false,
+          "wall_seconds": 0.15067473612725735
+        },
+        {
+          "event": "end",
+          "phase": "manage_protein_alignement",
+          "restored": false,
+          "wall_seconds": 238.97774130757898
+        },
+        {
+          "event": "end",
+          "phase": "get_contig_cds_metadata",
+          "restored": false,
+          "wall_seconds": 0.007067385129630566
+        },
+        {
+          "event": "end",
+          "phase": "add_bin_metrics",
+          "restored": false,
+          "wall_seconds": 20.632287395186722
+        },
+        {
+          "event": "end",
+          "phase": "add_bin_size_and_N50",
+          "restored": false,
+          "wall_seconds": 0.014359941706061363
+        },
+        {
+          "event": "end",
+          "phase": "create_intermediate_bins",
+          "restored": false,
+          "wall_seconds": 265.97740983683616
+        },
+        {
+          "event": "end",
+          "phase": "add_bin_metrics",
+          "restored": false,
+          "wall_seconds": 6080.8150565475225
+        },
+        {
+          "event": "end",
+          "phase": "add_bin_size_and_N50",
+          "restored": false,
+          "wall_seconds": 9.524256185628474
+        },
+        {
+          "event": "end",
+          "phase": "select_best_bins",
+          "restored": false,
+          "wall_seconds": 2.013369722291827
+        }
+      ],
+      "schema": "binette-cli-profile-v1",
+      "summed_process_tree_rssanon_peak_bytes": 24535097344,
+      "variant": "modified",
+      "wall_seconds": 6781.731910413131
+    }
+  },
+  "modified_root": "/no_backup/abaud/data/secondary/rat_mag_catalog/analysis/nf-imp3_tests/binette_optimization/profile3_20261002_80d805cd9e9d_w12",
+  "original_bins": 1103,
+  "panel": "raw_only",
+  "sample": "cami3_sample_13",
+  "schema": "binette-full-depth-comparison-v1",
+  "verdict": "PASS"
+}

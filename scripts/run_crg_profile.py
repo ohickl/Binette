@@ -186,14 +186,9 @@ def run(bundle, root, variant, assembly, tables, database, threads, quality_work
         "--no-progress",
     ]
     if variant == "modified":
-        command.extend(
-            [
-                "--quality-workers",
-                str(min(threads, 4) if quality_workers is None else quality_workers),
-                "--score-cache",
-                str(target / "score_shards"),
-            ]
-        )
+        if quality_workers is not None:
+            command.extend(["--quality-workers", str(quality_workers)])
+        command.extend(["--score-cache", str(target / "score_shards")])
         env["BINETTE_SCORING_TELEMETRY"] = str(target / "scoring.jsonl")
     contract = {
         "argv": command,
