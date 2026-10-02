@@ -310,6 +310,7 @@ Full follow-up `29187776` uses sixteen model owners on 16 CPUs/96G/12h;
 comparator `29187779` reuses the completed baseline. The sixteen-owner result is qualified below; six/twelve full timing/memory
 and exact output comparisons remain pending. Isolated root:
 `/no_backup/abaud/data/secondary/rat_mag_catalog/analysis/nf-imp3_tests/binette_optimization/profile3_20261002_80d805cd9e9d`.
+**Historical policy, superseded by the qualified default below.**
 The CLI's conservative default remains at most four; this experiment explicitly
 selects sixteen. Choose a default only after full-run performance qualification.
 Production nf-imp3 pins/resources are unchanged.
@@ -387,3 +388,48 @@ scheduling across separate predictions. Predicted sequences, metadata and
 byte equality remain checked; production prediction code is unchanged.
 Policy source/gate and full twelve-owner receipts are curated here. No
 production deployment, source-panel/cold-restore qualification or cleanup.
+
+## Final full owner comparison — 2026-10-02
+
+The earlier RUNNING/pending statements above are historical and superseded by
+these terminal receipts. The numerical core is identical across these trials.
+
+| Scoring owners | Slurm elapsed | Peak summed RssAnon GiB | Final comparison |
+| --- | --- | --- | --- |
+| 6 | 3h41m15s | 18.43 | PASS |
+| 12 | 1h53m07s | 22.85 | PASS |
+| 16 | 1h07m25s | 25.92 | PASS |
+
+All full owner-count trials and comparators are complete and PASS. Six-owner
+`29187859`/`29187862` finished `0:0` in 3h41m15s at 18.43 GiB anonymous
+peak (19,792,658,432 bytes); twelve-owner `29187860`/`29187863` took
+1h53m07s/22.85 GiB; sixteen-owner `29187776`/`29187779` took
+1h07m25s/25.92 GiB. All final memberships and scientific metrics are exact:
+26 bins/5,053 contigs, membership SHA
+`68f8457051684c8baf9a4300bb54db8dfbc12717aabe725459a72d8499f472d2`.
+All 6,945,894 candidate fingerprints agree. Six CLI wall 13,268.702 s,
+adjusted CLI wall 13,121.101 s, intermediate scoring 12,577.382 s.
+All owner counts needed cosine for the same 3,947,542/6,946,997 bins,
+including originals. The sixteen-owner choice meets the prior improved
+runtime target while using 46.6% less anonymous memory; it is the best
+observed configuration, not a universally established optimum. The six-owner
+full run is slower than the earlier four-owner run despite the cosine change;
+different nodes and variable aggregate worker-phase times prevent attributing
+this difference to owner count alone. Keep the controlled subset and full-run
+observations separate. No active comparison jobs remain.
+
+The full trials all allocated 16 CPUs/96G/12h and used different shared nodes;
+the controlled subset provides the scaling-efficiency curve, while these full
+runs establish the observed time/memory tradeoff. Curated full comparisons,
+terminal worker-phase totals and `crg_full_owner_summary_2026-10-02.json`
+preserve the final evidence. Phase readers `29188358`/`29188893`/`29191213`
+completed `0:0`; an earlier twelve-owner diagnostic used an incorrect Pixi
+path and failed `127`, then succeeded with `/usr/bin/python3`. This was a
+diagnostic-launch error, not a Binette or comparison failure.
+
+Next: integrate the qualified fork into the production build/pin, pass the
+required canonical paired microgate on that integration, recover the missing
+sample-13 main panel, verify the complete source and a fresh cold restore,
+then proceed with the larger comparison. No full nf-imp3 suite, push, production
+deployment or cleanup was performed. N50 and the Pyfastx custom-index issue
+remain separately qualified work.
