@@ -312,3 +312,31 @@ memory and exact output equivalence remain pending. Isolated root:
 The CLI's conservative default remains at most four; this experiment explicitly
 selects sixteen. Choose a default only after full-run performance qualification.
 Production nf-imp3 pins/resources are unchanged.
+
+## Updated-core owner scaling — 2026-10-02
+
+User-requested probe `29187855 COMPLETED 0:0 00:10:00` uses the same
+65,536 real candidates as the earlier probe and checks exact scores/models.
+All five counts passed. Results include model startup/mmap staging and
+telemetry, exclude input preparation, and come from one ordered subset run.
+The earlier probe used a different allocation without telemetry; its wall
+times do not isolate the effect of the cosine change.
+
+| Owners | Seconds | Peak summed RssAnon GiB | Speedup versus four | Relative scaling efficiency |
+| --- | ---: | ---: | ---: | ---: |
+| 4 | 177.638 | 13.27 | 1.00 | 100.0% |
+| 6 | 120.830 | 14.60 | 1.47 | 98.0% |
+| 8 | 95.019 | 15.97 | 1.87 | 93.5% |
+| 12 | 70.643 | 18.41 | 2.51 | 83.8% |
+| 16 | 58.751 | 21.02 | 3.02 | 75.6% |
+
+Similarity is needed for 46,477 of 65,536 rows (70.92%); 29.08% is skipped.
+Moving from twelve to sixteen owners saves 16.8% elapsed time in this subset
+and adds 2.61 GiB peak summed anonymous memory. This suggests a tradeoff,
+not an accepted full-run optimum. The full six-owner `29187859`/`29187862`,
+twelve-owner `29187860`/`29187863`, and sixteen-owner `29187776`/`29187779`
+trials remain active. Six/twelve roots add `_w6`/`_w12` to the root above;
+their source/gate links share the qualified immutable snapshot and their
+outputs/stores are separate. All allocations are 16CPU/96G/12h; the owner
+count differs. Full timings, exact output equivalence and memory decide the
+worker default. Receipt: `crg_owner_scaling_probe_2026-10-02.json`.

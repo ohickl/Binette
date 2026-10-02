@@ -1,0 +1,92 @@
+{
+  "schema": "binette-owner-subset-probe-v1",
+  "scope": "First 65536 real candidates in generation order; timings include worker startup and mmap staging, exclude input preparation; no score-cache reuse",
+  "source_manifest": "80d805cd9e9daff8215a2345cd248c923cd306106723498703a454e6cdae7159",
+  "input_stage_source_manifest": "53094ada9bcd454ee0f553ab146e6877ee011b2ae09006688cddece0efa4ebf4",
+  "inputs_sha256": "fad915d5e4c59ea7ebf25c3c681540f479b4dab14e5eeb483e052f7fc478ab59",
+  "candidate_count": 65536,
+  "candidate_order_sha256": "d68c8e62ddca99ad9cf3b152264455427e74711e5ec56e8c27a2bbcdb4e0e22e",
+  "runs": [
+    {
+      "workers": 4,
+      "wall_seconds": 177.63787793926895,
+      "summed_process_tree_rssanon_peak_bytes": 14248992768,
+      "exact_equal": true,
+      "cosine_bins": 65536,
+      "needed_cosine_bins": 46477,
+      "worker_phase_seconds": {
+        "worker_initialized": 0,
+        "features": 39.64529465511441,
+        "general": 8.709417865611613,
+        "specific": 192.18367812223732,
+        "cosine_rows": 0,
+        "postprocessing": 297.0408870577812
+      }
+    },
+    {
+      "workers": 6,
+      "wall_seconds": 120.83018620871007,
+      "summed_process_tree_rssanon_peak_bytes": 15672397824,
+      "exact_equal": true,
+      "cosine_bins": 65536,
+      "needed_cosine_bins": 46477,
+      "worker_phase_seconds": {
+        "worker_initialized": 0,
+        "features": 36.36405906267464,
+        "general": 8.618195562623441,
+        "specific": 194.81786591000855,
+        "cosine_rows": 0,
+        "postprocessing": 305.4749957174063
+      }
+    },
+    {
+      "workers": 8,
+      "wall_seconds": 95.01913005486131,
+      "summed_process_tree_rssanon_peak_bytes": 17151397888,
+      "exact_equal": true,
+      "cosine_bins": 65536,
+      "needed_cosine_bins": 46477,
+      "worker_phase_seconds": {
+        "worker_initialized": 0,
+        "features": 26.96544723212719,
+        "general": 8.459957470186055,
+        "specific": 187.69025649596006,
+        "cosine_rows": 0,
+        "postprocessing": 306.86794406734407
+      }
+    },
+    {
+      "workers": 12,
+      "wall_seconds": 70.64305663760751,
+      "summed_process_tree_rssanon_peak_bytes": 19766280192,
+      "exact_equal": true,
+      "cosine_bins": 65536,
+      "needed_cosine_bins": 46477,
+      "worker_phase_seconds": {
+        "worker_initialized": 0,
+        "features": 26.685845026746392,
+        "general": 8.545584146864712,
+        "specific": 199.56263336539268,
+        "cosine_rows": 0,
+        "postprocessing": 314.87052567116916
+      }
+    },
+    {
+      "workers": 16,
+      "wall_seconds": 58.7509823506698,
+      "summed_process_tree_rssanon_peak_bytes": 22570455040,
+      "exact_equal": true,
+      "cosine_bins": 65536,
+      "needed_cosine_bins": 46477,
+      "worker_phase_seconds": {
+        "worker_initialized": 0,
+        "features": 28.25527387484908,
+        "general": 8.7140158014372,
+        "specific": 222.12692944612354,
+        "cosine_rows": 0,
+        "postprocessing": 318.938946666196
+      }
+    }
+  ],
+  "verdict": "PASS"
+}
