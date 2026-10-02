@@ -1,0 +1,22 @@
+{
+  "schema": "binette-cosine-format-probe-v1",
+  "scope": "Packaged reference first 242 rows; isolated timing diagnostic, not full candidate speedup",
+  "reference_shape": [
+    5300,
+    20021
+  ],
+  "batch_nnz": 228890,
+  "exact_equal": true,
+  "seconds": {
+    "current": [
+      0.7884548865258694,
+      0.7708662524819374,
+      0.7699266280978918
+    ],
+    "cached_transpose": [
+      0.7666119746863842,
+      0.7647595955058932,
+      0.7654883768409491
+    ]
+  }
+}

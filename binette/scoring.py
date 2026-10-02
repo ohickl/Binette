@@ -76,10 +76,11 @@ class BoundedPostprocessor:
         batch = sparse.csr_matrix(features[:, :20021])
         norms = np.sqrt(batch.multiply(batch).sum(axis=1)).A.flatten()
         norms[norms == 0] = 1
+        transpose = batch.T.tocsr()
         maxima = np.full(len(features), -np.inf)
         for start in range(0, self.reference.shape[0], self.block_rows):
             stop = start + self.block_rows
-            numerators = self.reference[start:stop].dot(batch.T).toarray()
+            numerators = self.reference[start:stop].dot(transpose).toarray()
             # Same product and division as upstream; two successive divisions
             # would introduce different rounding near model-choice thresholds.
             denominator = self.norms[start:stop, None] * norms[None, :]
@@ -88,14 +89,34 @@ class BoundedPostprocessor:
         return maxima
 
     def calculate_general_specific_ratio(
-        self, AA_counts, features, general, contamination, specific
+        self,
+        AA_counts,
+        features,
+        general,
+        contamination,
+        specific,
+        *,
+        decision_only=False,
     ):
-        cosine = self.maximum_cosine(features)
         mean = (general + specific) / 2
         with np.errstate(divide="ignore", invalid="ignore"):
             aa_ratio = AA_counts / mean
-            novelty = general / (cosine**2)
         reduced = (mean < 55) & (aa_ratio < self.reduced_cutoff)
+        if decision_only:
+            # Reduced candidates and the final mean<=40/NaN branch choose a
+            # model without consulting similarity. Keep full diagnostics by
+            # default; prediction consumes only the quality/model columns.
+            needed = ~reduced & (mean > 40)
+            cosine = np.full(len(features), np.nan)
+            if np.any(needed):
+                cosine[needed] = self.maximum_cosine(
+                    features if np.all(needed) else features[needed]
+                )
+            telemetry("cosine_rows", 0, bins=len(features), needed=int(needed.sum()))
+        else:
+            cosine = self.maximum_cosine(features)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            novelty = general / (cosine**2)
         cutoff = np.select(
             [mean > 90, mean > 80, mean > 70, mean > 60, mean > 50, mean > 40],
             [160, 165, 165, 170, 175, 175],
@@ -149,6 +170,7 @@ def predict_batch(evidence, memberships, prediction, post):
         general,
         contamination,
         specific,
+        decision_only=True,
     )
     telemetry("postprocessing", time.perf_counter() - start)
     return (

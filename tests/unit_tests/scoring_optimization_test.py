@@ -82,6 +82,64 @@ def test_blocked_cosine_matches_dense_exactly(block_rows):
     np.testing.assert_array_equal(adapter.maximum_cosine(features), expected)
 
 
+def test_decision_only_cosine_preserves_quality_and_skips_irrelevant_rows():
+    rng = np.random.default_rng(91)
+    adapter = BoundedPostprocessor(
+        SimpleNamespace(
+            ref_data=sparse.csr_matrix(rng.random((17, 13))), reduced_cutoff=10
+        ),
+        7,
+    )
+    features = rng.random((9, 13))
+    general = np.array([0.0, 40.0, 41.0, 50.0, 55.0, 90.0, np.nan, np.inf, -np.inf])
+    specific = general.copy()
+    amino = np.array([0.0, 1000.0, 1.0, 1000.0, 1000.0, 1000.0, 0.0, 0.0, 0.0])
+    contamination = np.arange(9.0)
+    with np.errstate(invalid="ignore"):
+        expected = adapter.calculate_general_specific_ratio(
+            amino, features, general, contamination, specific
+        )
+        original = adapter.maximum_cosine
+        seen = []
+
+        def record(rows):
+            seen.append(rows.copy())
+            return original(rows)
+
+        adapter.maximum_cosine = record
+        actual = adapter.calculate_general_specific_ratio(
+            amino, features, general, contamination, specific, decision_only=True
+        )
+    for value, oracle in zip(actual[:3], expected[:3], strict=True):
+        np.testing.assert_array_equal(value, oracle)
+    np.testing.assert_array_equal(seen[0], features[[3, 4, 5, 7]])
+    np.testing.assert_array_equal(actual[3][[3, 4, 5, 7]], expected[3][[3, 4, 5, 7]])
+
+
+def test_decision_only_cosine_avoids_reference_work_when_no_rows_need_it():
+    adapter = BoundedPostprocessor(
+        SimpleNamespace(ref_data=sparse.eye(1, format="csr"), reduced_cutoff=10)
+    )
+
+    def forbidden(rows):
+        raise AssertionError("No candidate needs cosine similarity")
+
+    adapter.maximum_cosine = forbidden
+    actual = adapter.calculate_general_specific_ratio(
+        np.array([1000.0, 1.0]),
+        np.ones((2, 1)),
+        np.array([40.0, 50.0]),
+        np.zeros(2),
+        np.array([40.0, 50.0]),
+        decision_only=True,
+    )
+    np.testing.assert_array_equal(actual[0], [40.0, 50.0])
+    assert actual[2].tolist() == [
+        "Neural Network (Specific Model)",
+        "Gradient Boost (General Model)",
+    ]
+
+
 def test_metadata_does_not_scan_unrelated_contigs():
     class LookupOnly(dict):
         def items(self):

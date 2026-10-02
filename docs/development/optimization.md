@@ -262,5 +262,53 @@ feature/inference/selection code is identical. Final seal manifests/receipts
 are `crg_score_seal_sources_2026-10-01.json` and
 `crg_score_seal_microgate_2026-10-01.json` in fork development documentation.
 
-Final follow-up outputs, memory/performance measurements and scientific
-comparison remain pending. Production nf-imp3 pins/resources are unchanged.
+Follow-up `29170554 COMPLETED 0:0 03:22:17`; comparator `29170555` PASS.
+Exact final memberships/scientific metrics agree: 26 bins and 5,053 contigs.
+Peak summed process-tree RssAnon is 19,798,839,296 bytes (18.44 GiB), versus
+48.52 GiB for the previous improved fork, 62.0% lower. Runtime is 2.22 times
+longer; four versus sixteen owners is a confound, and these are single runs.
+Scoring grew from 4,589.82 to 11,407.60 s, while N50/selection fell to
+9.61/2.14 s. Final phase probe `29187689` attributes 54.0% of worker phase
+time to postprocessing and 39.7% to specific inference. Worker sums are not
+job elapsed time. Curated receipts: `crg_followup_comparison_2026-10-02.json`
+and `crg_followup_phase_totals_2026-10-02.json`.
+Read-only cosine format probe `29187691 COMPLETED 0:0` preserved exact
+results but improved the median isolated timing by only about 1%; this does
+not explain the regression. The format conversion is now cached per batch.
+Fixed real-candidate probe `29187703 COMPLETED 0:0` used the same first
+65,536 candidates, immutable evidence and no score-cache reuse:
+
+| Model owners | Scoring seconds | Peak summed RssAnon GiB |
+| --- | ---: | ---: |
+| 4 | 144.112 | 13.22 |
+| 8 | 74.627 | 15.89 |
+| 16 | 48.076 | 20.85 |
+
+All numeric scores/model choices agree exactly. Timings include startup/mmap
+staging, exclude input preparation, and are a single ordered subset experiment.
+These results establish a concurrency effect, not full-depth performance.
+Receipt: `crg_owner_subset_probe_2026-10-02.json`.
+
+The new decision-only prediction path skips cosine for reduced candidates and
+mean<=40/NaN candidates, whose models are chosen without similarity. The
+adapter's default diagnostic call still computes all cosine values. Numerical
+precision, branch order and rounded quality/model outputs are preserved.
+Telemetry counts all and needed cosine rows. Focused controls passed 40 tests
+(scoring unit plus the full differential module); Ruff/whitespace passed.
+No full repository suite or external upstream dataset suite was run.
+Frozen-runtime gate `29187745 COMPLETED 0:0 00:02:18` passed:
+
+```text
+binette-isolated-microgate-v2 pairs=16427 variants=2 graph_oracles=12 numeric_bins=8 workers=2 complete_restore=PASS partial_restore=PASS failed=0
+```
+
+Source manifest `80d805cd9e9daff8215a2345cd248c923cd306106723498703a454e6cdae7159`;
+receipts `crg_decision_sources_2026-10-02.json` and
+`crg_decision_microgate_2026-10-02.json`.
+Full follow-up `29187776` uses sixteen model owners on 16 CPUs/96G/12h;
+comparator `29187779` reuses the completed baseline. Both new full timing/
+memory and exact output equivalence remain pending. Isolated root:
+`/no_backup/abaud/data/secondary/rat_mag_catalog/analysis/nf-imp3_tests/binette_optimization/profile3_20261002_80d805cd9e9d`.
+The CLI's conservative default remains at most four; this experiment explicitly
+selects sixteen. Choose a default only after full-run performance qualification.
+Production nf-imp3 pins/resources are unchanged.

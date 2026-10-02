@@ -152,7 +152,7 @@ def process_tree_rss(pid):
     return anonymous, len(seen)
 
 
-def run(bundle, root, variant, assembly, tables, database, threads):
+def run(bundle, root, variant, assembly, tables, database, threads, quality_workers=None):
     target = root / variant
     target.mkdir(exist_ok=True)
     env = dict(
@@ -189,7 +189,7 @@ def run(bundle, root, variant, assembly, tables, database, threads):
         command.extend(
             [
                 "--quality-workers",
-                str(min(threads, 4)),
+                str(min(threads, 4) if quality_workers is None else quality_workers),
                 "--score-cache",
                 str(target / "score_shards"),
             ]
@@ -350,6 +350,7 @@ def main():
     parser.add_argument("--fixture", type=Path)
     parser.add_argument("--micro-assembly", type=Path)
     parser.add_argument("--recover", action="store_true")
+    parser.add_argument("--quality-workers", type=int)
     args = parser.parse_args()
     args.root.mkdir(parents=True, exist_ok=args.recover)
     sys.path.insert(0, str(args.bundle / "modified"))
@@ -409,6 +410,7 @@ def main():
                     tables,
                     args.database,
                     16,
+                    args.quality_workers,
                 )
             ),
             flush=True,

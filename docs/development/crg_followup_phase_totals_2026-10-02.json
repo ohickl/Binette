@@ -1,0 +1,31 @@
+{
+  "phases": {
+    "features": {
+      "bins": 6946997,
+      "events": 27850,
+      "seconds": 1876.7487667528912
+    },
+    "general": {
+      "bins": 0,
+      "events": 27850,
+      "seconds": 838.1551946820691
+    },
+    "postprocessing": {
+      "bins": 0,
+      "events": 27850,
+      "seconds": 23274.47669494711
+    },
+    "specific": {
+      "bins": 0,
+      "events": 27850,
+      "seconds": 17124.826405684464
+    },
+    "worker_initialized": {
+      "bins": 0,
+      "events": 7,
+      "seconds": 0.0
+    }
+  },
+  "schema": "binette-progress-probe-v1",
+  "scope": "Feature events count started batches, not sealed completion; original 1103 bins are included"
+}

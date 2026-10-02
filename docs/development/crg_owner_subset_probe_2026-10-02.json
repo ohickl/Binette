@@ -1,0 +1,29 @@
+{
+  "schema": "binette-owner-subset-probe-v1",
+  "scope": "First 65536 real candidates in generation order; timings include worker startup and mmap staging, exclude input preparation; no score-cache reuse",
+  "source_manifest": "53094ada9bcd454ee0f553ab146e6877ee011b2ae09006688cddece0efa4ebf4",
+  "inputs_sha256": "fad915d5e4c59ea7ebf25c3c681540f479b4dab14e5eeb483e052f7fc478ab59",
+  "candidate_count": 65536,
+  "candidate_order_sha256": "d68c8e62ddca99ad9cf3b152264455427e74711e5ec56e8c27a2bbcdb4e0e22e",
+  "runs": [
+    {
+      "workers": 4,
+      "wall_seconds": 144.11200367845595,
+      "summed_process_tree_rssanon_peak_bytes": 14191742976,
+      "exact_equal": true
+    },
+    {
+      "workers": 8,
+      "wall_seconds": 74.62734504882246,
+      "summed_process_tree_rssanon_peak_bytes": 17057398784,
+      "exact_equal": true
+    },
+    {
+      "workers": 16,
+      "wall_seconds": 48.07601035293192,
+      "summed_process_tree_rssanon_peak_bytes": 22387232768,
+      "exact_equal": true
+    }
+  ],
+  "verdict": "PASS"
+}
