@@ -1,0 +1,18 @@
+{
+  "schema": "binette-policy-resource-validation-v1",
+  "source_manifest_sha256": "c61ea3926f2aea6b91bad3da5390832b36caaeecd00d5f017c9db8d25c135a12",
+  "quality_workers_default_cap": 20,
+  "cpus": 20,
+  "memory_gib": 36,
+  "measured_prior_peak_gib": 29.063941955566406,
+  "headroom_percent": 23.86482,
+  "gate_job": 29239385,
+  "full_memory_cap_validation_job": 29239517,
+  "full_dependency": "afterok:29239385",
+  "full_scope": "fresh CAMI3 sample-13 raw-only panel; default worker selection without explicit override",
+  "verdict": "PENDING",
+  "production_status": "existing pipeline runtime unchanged until optimized image and integration microgate; wider main panel not sized from raw-only evidence",
+  "focused_validation": "40 scoring/equivalence passed; Ruff and bash syntax passed",
+  "gate_status": "PASS 0:0 00:02:43",
+  "full_status": "RUNNING"
+}

@@ -408,7 +408,7 @@ def add_bin_metrics(
             contig_info["contig_to_aa_counter"],
             contig_info["contig_to_aa_length"],
         )
-    workers = min(threads, 16) if quality_workers is None else quality_workers
+    workers = min(threads, 20) if quality_workers is None else quality_workers
     if workers <= 0 or workers > threads:
         raise ValueError("Model workers must be between one and the CPU allocation")
     if quality_workers is None and len(bins_list) <= checkm2_batch_size * 12:

@@ -1,0 +1,38 @@
+{
+  "baseline": "4f8791e9b411708b0717dbd8e1296a68ac72ae24",
+  "files": {
+    "baseline/binette/__init__.py": "3259b81af99bffac90c7051bbf62ac73e0491572cf83d1f556dda257bc17ac0e",
+    "baseline/binette/bin_manager.py": "8aacea3ed17716e7f5e08ddc21347c30e243c76baa374cbb99f094cd1adf08b7",
+    "baseline/binette/bin_quality.py": "679108b32d25cd0875c4049f26506a72e85445d8b7fdcb28ffadc6dd80bc84d4",
+    "baseline/binette/cds.py": "a4c306e6d8bb17f9b945c9b971549d7d9ec925b4114262384591942c6af3073b",
+    "baseline/binette/contig_manager.py": "1249f9ae4e002402608920489bf24620d85f90015b6ad450a20c92fda627b06b",
+    "baseline/binette/diamond.py": "8daca1d52c478e73500dfb84e9e2268c0bb083da3bfc8e235f1cb32dd7012b77",
+    "baseline/binette/io_manager.py": "c1b1ae915acb2df735044ed9d426e522ce5ec78a0b84652ec3d853e2063a1d45",
+    "baseline/binette/main.py": "08aad5fb9afe5551b48acf6f883b4a6735853dbd5a91a376a47d6a04cfc6561d",
+    "modified/binette/__init__.py": "3259b81af99bffac90c7051bbf62ac73e0491572cf83d1f556dda257bc17ac0e",
+    "modified/binette/bin_manager.py": "b6bfcbc4d85bc5bbba5c9d3b3c4d1f226f557c68016774763b9812b33539748e",
+    "modified/binette/bin_quality.py": "25c2f6ec5ad89e14e9727dbb467f17489ea28c2376b4a655153367ebec03e947",
+    "modified/binette/cds.py": "99c6852a58495d8dfea631f1d07d1346c7b3df04ede72d66fb64d22b81007e2a",
+    "modified/binette/contig_manager.py": "1249f9ae4e002402608920489bf24620d85f90015b6ad450a20c92fda627b06b",
+    "modified/binette/diamond.py": "2501703cb3f72b9b8f708cf1e9a6a8fe93aa2e5bcd9fed3e2fc13c050039deee",
+    "modified/binette/features.py": "77c27d9df581801b8a29d7bca7d1765d5f307fd0dcf051b7c7a56b7587e40d19",
+    "modified/binette/io_manager.py": "c5f2b8e2ffc46c0974d711e3ccdea532d934315d913d2bfc9dc1dedda4fa7b84",
+    "modified/binette/main.py": "6efce7663f63b5ceaec8d9068a942b1db7148b42cfae2a65b4e52bf8cc5c4e2f",
+    "modified/binette/score_store.py": "fd216ab6a5241f54f8844b4efd5996a932736d310f8e777932c805296baf1b34",
+    "modified/binette/scoring.py": "ca4ff416022268ae0f0ec2c13254833e2ecf8f816f048419d31dc45282e9a4b3",
+    "scripts/compare_crg_profiles.py": "033ca666ad6273feb36c65c40206bef20c0aa0f03f9d56edab4f23b26f702fe2",
+    "scripts/profile_cli.py": "1add555183700925971ff1f0ebeba064a876b5ce7e6cb2e2f718fb8da607e9f6",
+    "scripts/run_crg_policy_trial.sh": "b14db046e2111cb5a704158e5dd7009c762e2be9460e24c3a18bd1b44b118cf0",
+    "scripts/run_crg_profile.py": "6b8924d76a06bf7514bcfc70c40cf11cc8e42b780ff9da3a7962c4eca7748b1f",
+    "transfer.json": "bf5ffde4de810bb3702daed5cb45f5f92ff52ce9303ccb6d081c2879dc31c6f1"
+  },
+  "fork_parent": "17bce33eb50d55855e8ebebb034a4672a8690c3b",
+  "resource_policy": {
+    "cpus": 20,
+    "memory_headroom_percent": 23.864822105128034,
+    "quality_workers_cap": 20,
+    "scope": "improved fork; raw-only CAMI3 sample-13 demonstrated; wider main-panel qualification remains required",
+    "slurm_memory": "36G"
+  },
+  "schema": "binette-profile-snapshot-v1"
+}

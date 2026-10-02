@@ -544,3 +544,25 @@ its own policy microgate. Production integration is still outstanding. No
 remaining jobs in this three-job series; retain all stores and diagnostics.
 Receipts: `crg_matched_full_w{16,20,24}_2026-10-02.json` and
 `crg_matched_owner_summary_2026-10-02.json` in fork development docs.
+
+### 2026-10-02 — twenty workers selected; 36 GiB cap validation active
+
+User approved twenty workers and a safer lower memory request. Independent
+fork automatic model-owner cap is now twenty (bounded by `--threads`; small
+workloads retain one owner). CLI help matches. Forty focused numerical/
+spawn/equivalence checks, Ruff, shell syntax and whitespace passed.
+The new source-bound launcher uses 20 CPUs and `--mem=36G` for a fresh
+full trial with automatic worker selection and per-event telemetry disabled.
+36 GiB provides 23.9% headroom above the prior 29.06 GiB anonymous peak.
+Source manifest `c61ea3926f2aea6b91bad3da5390832b36caaeecd00d5f017c9db8d25c135a12`.
+Gate `29239385 COMPLETED 0:0 00:02:43` passed the canonical 16,427 paired
+reads, twelve graph oracles, nonempty two-owner inference and complete/partial
+score recovery. Full `29239517` is RUNNING after that PASS.
+Root: `/no_backup/abaud/data/secondary/rat_mag_catalog/analysis/nf-imp3_tests/binette_optimization/policy20_36g_20261002_c61ea3926f2a`.
+
+**Next:** monitor `29239517` every fifteen minutes;
+collect runtime, anonymous peak, CPU accounting and exact comparator PASS
+under the actual 36 GiB cgroup cap. A reduced memory request is selected but
+not yet cap-qualified. Production pipeline image/resources remain unchanged
+until optimized image integration and its own paired gate; main-panel memory
+must be qualified separately. Preserve all old stores/outputs and snapshots.
