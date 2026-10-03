@@ -566,3 +566,21 @@ under the actual 36 GiB cgroup cap. A reduced memory request is selected but
 not yet cap-qualified. Production pipeline image/resources remain unchanged
 until optimized image integration and its own paired gate; main-panel memory
 must be qualified separately. Preserve all old stores/outputs and snapshots.
+
+### 2026-10-03 — twenty-worker / 36 GiB full-depth cap validation PASS
+
+`29239517 COMPLETED 0:0 00:53:12` on `genoa64-04`, with Slurm confirming
+20 CPUs and `mem=36G`. Fresh automatic-worker-selection CLI took 3,182.759 s;
+peak summed anonymous RSS 31,526,006,784 bytes (29.36 GiB). Exact final
+scientific metrics/memberships passed (26 bins/5,053 contigs, SHA
+`68f8457051684c8baf9a4300bb54db8dfbc12717aabe725459a72d8499f472d2`),
+plus the 6,945,894 candidate fingerprint. All expensive phases were fresh.
+Whole-job utilization 72.83%; scoring 87.96% including kernel CPU. The actual
+36 GiB cap is qualified for this full-depth sample-13 raw-only panel, with
+6.64 GiB unused relative to the measured anonymous peak. This is not a
+main-ensemble resource guarantee. Production image/resource integration and
+its canonical paired gate, main-panel qualification/recovery, complete source
+assertion and fresh cold restore remain required before the larger comparison.
+**Next:** prepare the optimized production image/pin integration; preserve
+all stores, snapshots and diagnostics. No jobs remain in this validation pair.
+Receipt `crg_policy20_36g_full_2026-10-03.json` in fork development docs.

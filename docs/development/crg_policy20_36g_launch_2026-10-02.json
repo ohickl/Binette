@@ -10,9 +10,10 @@
   "full_memory_cap_validation_job": 29239517,
   "full_dependency": "afterok:29239385",
   "full_scope": "fresh CAMI3 sample-13 raw-only panel; default worker selection without explicit override",
-  "verdict": "PENDING",
+  "verdict": "PASS",
   "production_status": "existing pipeline runtime unchanged until optimized image and integration microgate; wider main panel not sized from raw-only evidence",
   "focused_validation": "40 scoring/equivalence passed; Ruff and bash syntax passed",
   "gate_status": "PASS 0:0 00:02:43",
-  "full_status": "RUNNING"
+  "full_status": "COMPLETED 0:0 00:53:12",
+  "full_receipt": "crg_policy20_36g_full_2026-10-03.json"
 }
